@@ -1,0 +1,21 @@
+@{ ViewData["Title"] = "Log in · AURAK Research Grants Dashboard"; var demo = M.demo; }
+<div class="container">
+  <div class="auth-wrap">
+    <div class="section-head"><h2>Log In</h2><div class="rule"></div></div>
+    <form class="card" method="post" action="/login">
+      <label for="email">Email or student ID</label>
+      <input id="email" type="text" name="email" autocomplete="username" required autofocus>
+      <label for="password">Password</label>
+      <input id="password" type="password" name="password" required>
+      <div class="btn-row" style="margin-top:18px"><button class="btn lg" type="submit">Log In</button><a href="/signup">New student? Sign up</a></div>
+    </form>
+    <div class="note demo-accounts" style="margin-top:18px">
+      <b>Demo accounts (local prototype only):</b><br>
+      Admin: <code>@demo.ADMIN_EMAIL</code><br>
+      Faculty: <code>@demo.FACULTY_EMAIL</code> (linked to @demo.FACULTY_DEMO_NAME's faculty record)<br>
+      Student (approved, Research Assistant): <code>@demo.DEMO_RA_STUDENT_ID</code> (@demo.DEMO_RA_NAME)<br>
+      Student (not approved yet): <code>@demo.STUDENT_EMAIL</code><br>
+      Passwords are listed in <code>.env.example</code>.
+    </div>
+  </div>
+</div>

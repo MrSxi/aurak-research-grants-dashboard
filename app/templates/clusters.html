@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Research Clusters · AURAK Research Grants{% endblock %}
+{% block content %}
+<section class="section intro" style="padding-bottom:20px">
+  <div class="container">
+    <h1>AURAK Research Clusters</h1>
+    <div class="lead">Proposed by this project · membership is AI-suggested</div>
+    <p>AURAK has no official research clusters, so this dashboard proposes ten, drawn from the departments and research interests of faculty across all three schools. Each person joins the cluster(s) closest to their interests, publications and past grants. Membership is recomputed whenever the data changes, so nothing is assigned by hand. Use a cluster to form a team for a grant.</p>
+  </div>
+</section>
+<section class="section tight">
+  <div class="container">
+    <div class="feature-grid">
+      {% for c in groups %}
+        <a class="feature {{ c.color }}{% if CLUSTER_IMAGES.get(c.key) %} has-img{% endif %}" href="/clusters/{{ c.key }}" style="min-height:250px;--fimg:url('{{ CLUSTER_IMAGES.get(c.key, '') }}')">
+          <span class="big" style="font-size:2.6rem">{{ c.faculty|length }}<span style="font-size:1rem"> faculty</span></span>
+          <div class="ft"><strong style="font-size:1.7rem">{{ c.name }}</strong>
+            <span>{{ c.schools|length }} school{{ '' if c.schools|length == 1 else 's' }} · {{ c.students|length }} student{{ '' if c.students|length == 1 else 's' }} · {{ c.grants }} related grants</span></div>
+        </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endblock %}

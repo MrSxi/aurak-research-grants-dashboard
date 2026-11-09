@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% from "_macros.html" import avatar %}
+{% block title %}Researchers · AURAK Research Grants{% endblock %}
+{% block hero %}
+<div class="searchband">
+  <form action="/researchers" method="get" class="container">
+    <i class="fas fa-search"></i>
+    <input type="search" name="q" value="{{ q }}" placeholder="Describe a research idea to find AURAK researchers who work on it">
+    <button class="btn" type="submit">Find</button>
+  </form>
+</div>
+{% endblock %}
+{% block content %}
+<div class="container page-head">
+  <div class="section-head"><h2>{{ 'Researchers Matching “' ~ q ~ '”' if q else 'AURAK Researchers' }}</h2><div class="rule"></div></div>
+</div>
+<div class="container">
+  {% if ranked is not none %}
+    <p class="muted">Faculty first, then students. Match scores rank research similarity. They do not mean a person is available or willing to collaborate.</p>
+    {% set fac = ranked|selectattr(0, 'equalto', 'faculty')|list %}
+    {% set stu = ranked|selectattr(0, 'equalto', 'student')|list %}
+    {% for ptype, pid, score in fac + stu %}
+      {% set p = faculty.get(pid) if ptype == 'faculty' else students.get(pid) %}
+      <div class="match">
+        <div class="top">
+          {% if ptype == 'faculty' and p %}{{ avatar(p, 'sm') }}{% endif %}
+          <div class="scorebox {{ '' if score >= config.MATCH_STRONG else 'possible' }}"><div><strong>{{ score|score }}</strong><small>match score</small></div></div>
+          <div class="who"><a href="/{{ 'faculty' if ptype == 'faculty' else 'students' }}/{{ pid }}">{{ p.full_name if p else pid }}</a>
+            <div class="muted">{{ 'Faculty' if ptype == 'faculty' else 'Student' }}{% if p and p.school %} · {{ p.school }}{% endif %}{% if ptype == 'faculty' and p and p.department %} · {{ p.department }}{% endif %}</div>
+            {% if ptype == 'faculty' and interests.get(pid) %}<div class="small">{{ interests[pid][:5]|join(' · ')|truncate(200) }}</div>{% endif %}
+          </div>
+        </div>
+      </div>
+    {% else %}
+      <div class="note">Nobody in the AURAK dataset works closely on this topic. Try broader words.</div>
+    {% endfor %}
+  {% else %}
+    <form method="get" class="btn-row" style="margin-bottom:18px">
+      <select name="school" onchange="this.form.submit()" style="max-width:360px"><option value="">All schools</option>{% for s in schools %}<option {{ 'selected' if s == school }}>{{ s }}</option>{% endfor %}</select>
+    </form>
+    <div class="grid-3">
+      {% for f in rows %}
+        <a class="card person-card" href="/faculty/{{ f.id }}">
+          {{ avatar(f) }}
+          <div>
+            <h4 style="margin-bottom:4px">{{ f.full_name }}</h4>
+            <div class="small muted">{{ f.department or '' }}</div>
+            <div class="small" style="margin-top:6px">{{ (interests.get(f.id) or [])[:4]|join(' · ')|truncate(150) or '' }}</div>
+          </div>
+        </a>
+      {% endfor %}
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

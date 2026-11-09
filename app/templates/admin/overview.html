@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Admin · AURAK Research Grants{% endblock %}
+{% block content %}
+<section class="section intro" style="padding-bottom:24px">
+  <div class="container">
+    <h1>Administration</h1>
+    <div class="lead">Admin view · {{ user.name }}</div>
+    <p>Approve student submissions, add publications and grants that were not picked up automatically, monitor grant sources and browse the database. Only administrators can see raw data.</p>
+    <div class="btn-row">
+      <a class="btn lg" href="/admin/queue">Approval queue{% if stats.pending %} ({{ stats.pending }}){% endif %}</a>
+      <a class="btn lg" href="/admin/publications/new">Add a publication</a>
+      <form method="post" action="/admin/refresh" style="display:inline"><button class="btn lg gold" type="submit" {{ 'disabled' if state.running }}><i class="fas fa-sync-alt"></i> Refresh now</button></form>
+    </div>
+    {% if state.running %}<div class="warn" style="margin-top:14px"><i class="fas fa-spinner fa-spin"></i>Refresh running: {{ state.step }} (started {{ state.started_at.strftime('%H:%M:%S') }} UTC). Reload to update.</div>
+    {% elif state.last_finished %}<p class="small muted" style="margin-top:10px">Last refresh finished {{ state.last_finished.strftime('%d %b %Y %H:%M') }} UTC: {{ state.last_summary }}</p>{% endif %}
+  </div>
+</section>
+<div class="container">
+  <div class="stats">
+    {% for label, key in [('Faculty','faculty'),('Faculty linked to OpenAlex','openalex'),('Students (signed up)','students'),('Publications','publications'),('Grants (visible)','grants'),('Open & upcoming','active'),('Pending approvals','pending'),('Cached matches','matches'),('Notifications','notifications')] %}
+      <div class="stat"><strong>{{ stats[key] }}</strong><span>{{ label }}</span></div>
+    {% endfor %}
+  </div>
+  <div class="section-head" style="margin-top:40px"><h2 style="font-size:1.8rem">Recent Ingestion Runs</h2><div class="rule"></div><a class="view-all" href="/admin/sources">Source health <i class="fas fa-chevron-right small"></i></a></div>
+  {% include "admin/_runs.html" %}
+</div>
+{% endblock %}

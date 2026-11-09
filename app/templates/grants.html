@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% from "_macros.html" import grant_card %}
+{% block title %}Grants · AURAK Research Grants Dashboard{% endblock %}
+{% block hero %}
+<div class="searchband" id="search">
+  <form action="/grants" method="get" class="container">
+    <i class="fas fa-search"></i>
+    <input type="search" name="q" value="{{ args.q or '' }}" placeholder="Search grants by keyword or topic">
+    {% for k in ['scope','type','status','source','deadline_days','min_amount','sort'] %}{% if args.get(k) %}<input type="hidden" name="{{ k }}" value="{{ args[k] }}">{% endif %}{% endfor %}
+    <input type="hidden" name="mode" value="{{ args.mode or 'meaning' }}">
+    <button class="btn" type="submit">Search</button>
+  </form>
+</div>
+{% endblock %}
+{% block content %}
+<div class="container page-head">
+  <div class="section-head"><h2>Grants, Fellowships &amp; Scholarships</h2><div class="rule"></div></div>
+</div>
+<div class="container layout-side">
+  <form class="filters" method="get" action="/grants">
+    <h3><i class="fas fa-filter"></i> Filters</h3>
+    <label for="q">Keywords</label>
+    <input id="q" type="text" name="q" value="{{ args.q or '' }}">
+    <label class="check"><input type="checkbox" name="mode" value="meaning" {{ 'checked' if args.mode == 'meaning' }}> Match by meaning (AI search)</label>
+    <label for="scope">National / International</label>
+    <select id="scope" name="scope">
+      <option value="">All</option>
+      <option value="UAE" {{ 'selected' if args.scope == 'UAE' }}>UAE (national)</option>
+      <option value="international" {{ 'selected' if args.scope == 'international' }}>International</option>
+    </select>
+    <label for="type">Type</label>
+    <select id="type" name="type"><option value="">All types</option>
+      {% for t in types %}<option value="{{ t }}" {{ 'selected' if args.type == t }}>{{ t|capitalize }}</option>{% endfor %}
+    </select>
+    <label for="area">Research area</label>
+    <input id="area" type="text" name="area" value="{{ args.area or '' }}" placeholder="e.g. energy, health">
+    <label for="status">Status</label>
+    <select id="status" name="status">
+      {% for v, l in statuses %}<option value="{{ v }}" {{ 'selected' if (args.status or 'active') == v }}>{{ l }}</option>{% endfor %}
+    </select>
+    <label for="deadline_days">Deadline within</label>
+    <select id="deadline_days" name="deadline_days"><option value="">Any time</option>
+      {% for d in [14, 30, 60, 90, 180] %}<option value="{{ d }}" {{ 'selected' if args.deadline_days == d|string }}>{{ d }} days</option>{% endfor %}
+    </select>
+    <label for="min_amount">Minimum amount (in the grant's currency)</label>
+    <input id="min_amount" type="number" name="min_amount" min="0" step="1000" value="{{ args.min_amount or '' }}">
+    <label class="check"><input type="checkbox" name="has_amount" value="1" {{ 'checked' if args.has_amount }}> Amount published only</label>
+    <label for="source">Source</label>
+    <select id="source" name="source"><option value="">All sources</option>
+      {% for s in sources %}<option value="{{ s.key }}" {{ 'selected' if args.source == s.key }}>{{ s.name }} ({{ s.records_count }})</option>{% endfor %}
+    </select>
+    <label for="sort">Sort by</label>
+    <select id="sort" name="sort">
+      {% for v, l in [('deadline','Closest deadline'),('newest','Newest'),('amount','Largest amount'),('relevance','Relevance (AI search)')] %}<option value="{{ v }}" {{ 'selected' if args.sort == v }}>{{ l }}</option>{% endfor %}
+    </select>
+    <div class="btn-row" style="margin-top:16px"><button class="btn" type="submit">Apply</button><a href="/grants">Reset</a></div>
+  </form>
+  <div>
+    <p class="muted"><b>{{ total }}</b> result{{ '' if total == 1 else 's' }}{% if args.q %} for “{{ args.q }}”{% endif %}. Closed calls are hidden unless you choose them under Status.</p>
+    {% for g in rows %}
+      {{ grant_card(g, source_names) }}
+    {% else %}
+      <div class="note">No grants match these filters. Try removing a filter or searching with different words.</div>
+    {% endfor %}
+    {% if pages > 1 %}
+    <div class="pager">
+      {% if page > 1 %}<a href="?{{ qs }}&page={{ page - 1 }}">&laquo; Prev</a>{% endif %}
+      {% for p in range([1, page - 3]|max, [pages, page + 3]|min + 1) %}
+        {% if p == page %}<span class="cur">{{ p }}</span>{% else %}<a href="?{{ qs }}&page={{ p }}">{{ p }}</a>{% endif %}
+      {% endfor %}
+      {% if page < pages %}<a href="?{{ qs }}&page={{ page + 1 }}">Next &raquo;</a>{% endif %}
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% from "_macros.html" import section_head, status_badge, deadline, avatar %}
+{% block title %}{{ person.full_name }} · AURAK Research Grants{% endblock %}
+{% block content %}
+<div class="container page-head">
+  <div class="crumbs"><a href="/researchers">Researchers</a> / {{ 'Faculty' if kind == 'faculty' else 'Student' }}</div>
+  {% if kind == 'faculty' %}
+  <div class="person-head">
+    {{ avatar(person, 'lg') }}
+    <div>
+      <h1>{{ person.full_name }}</h1>
+      <div class="lead head" style="font-size:1.2rem">{{ person.title or '' }}</div>
+      <div class="muted">{{ person.department or '' }}{% if person.school %} · {{ person.school }}{% endif %}</div>
+    </div>
+  </div>
+  {% else %}
+    <h1>{{ person.full_name }}</h1>
+    <div class="muted">Student{% if person.major %} · {{ person.major }}{% endif %}{% if person.school %} · {{ person.school }}{% endif %}</div>
+  {% endif %}
+  {% if own %}<p class="small muted">This is how your profile appears to others. It is built from the AURAK faculty dataset and OpenAlex; new OpenAlex publications are added automatically every refresh.</p>{% endif %}
+</div>
+
+<div class="container layout-main" style="margin-top:20px">
+  <div>
+    {% if kind == 'faculty' %}
+    <div class="card">
+      <h3>Profile</h3>
+      <dl class="facts">
+        <dt>Email</dt><dd>{{ person.email|missing }}</dd>
+        <dt>Biography</dt><dd>{{ person.biography|missing }}</dd>
+        <dt>Links</dt><dd>
+          {% if person.profile_url %}<a href="{{ person.profile_url }}" target="_blank" rel="noopener">AURAK profile</a> · {% endif %}
+          {% if person.google_scholar_url %}<a href="{{ person.google_scholar_url }}" target="_blank" rel="noopener">Google Scholar</a> · {% endif %}
+          {% for u in person.scopus_urls or [] %}<a href="{{ u }}" target="_blank" rel="noopener">Scopus{% if (person.scopus_urls|length) > 1 %} {{ loop.index }}{% endif %}</a> · {% endfor %}
+          {% if person.orcid_url %}<a href="{{ person.orcid_url }}" target="_blank" rel="noopener">ORCID</a> · {% endif %}
+          {% if person.openalex_id %}<a href="https://openalex.org/{{ person.openalex_id }}" target="_blank" rel="noopener">OpenAlex</a>{% else %}<span class="missing">No OpenAlex profile linked</span>{% endif %}
+        </dd>
+        {% if person.works_count %}<dt>OpenAlex</dt><dd>{{ person.works_count }} works · {{ person.cited_by_count }} citations</dd>{% endif %}
+      </dl>
+    </div>
+    {% endif %}
+
+    <div class="card">
+      <h3>Research interests</h3>
+      {% if interests %}<div class="chips">{% for i in interests %}
+        <span class="chip approved" {% if i.source == 'faculty' %}title="Added by the faculty member"{% endif %}>{{ i.text|truncate(120) }}{% if i.source == 'faculty' %} <span class="badge gold">self-added</span>{% endif %}
+          {% if kind == 'faculty' and user.role == 'admin' %}
+            <form method="post" action="/admin/interests/{{ i.id }}/delete" style="display:inline"><button type="submit" title="Remove (admin)">&times;</button></form>
+          {% elif own %}
+            <form method="post" action="/me/interests/{{ i.id }}/delete" style="display:inline"><button type="submit" title="Remove">&times;</button></form>
+          {% endif %}
+        </span>{% endfor %}</div>
+      {% else %}<p class="missing">No research interests published.</p>{% endif %}
+      {% if own and kind == 'faculty' %}
+        <form method="post" action="/me/interests" data-require-interest="1" style="margin-top:10px">
+          {% include "_interest_picker.html" %}
+          <input type="hidden" name="text" id="interests-hidden">
+          <button class="btn" type="submit"><i class="fas fa-plus"></i> Add interests</button>
+          <p class="small muted">Add or remove interests freely (no approval needed). Your grant matches update automatically. An administrator may remove interests that do not fit.</p>
+        </form>
+      {% endif %}
+      {% if kind == 'faculty' and person.openalex_topics %}
+        <h4 style="margin-top:14px">OpenAlex research topics</h4>
+        <div class="chips">{% for t in person.openalex_topics %}<span class="chip">{{ t }}</span>{% endfor %}</div>
+      {% endif %}
+      {% if pclusters %}
+        <h4 style="margin-top:14px">Research clusters <span class="badge gold">AI-suggested membership</span></h4>
+        <div class="chips">{% for c, s, primary in pclusters %}<a class="chip {{ 'approved' if primary }}" href="/clusters/{{ c.key }}">{{ c.name }}</a>{% endfor %}</div>
+      {% endif %}
+    </div>
+
+    <div class="card">
+      <h3>Publications <span class="muted small">({{ pubs|length }})</span></h3>
+      {% if pubs %}
+      <div class="table-wrap"><table class="data">
+        <tr><th>Year</th><th>Title</th><th>Venue</th><th>Source</th></tr>
+        {% for p in pubs[:60] %}
+        <tr><td>{{ p.year or '' }}</td>
+            <td>{% if p.url %}<a href="{{ p.url }}" target="_blank" rel="noopener">{{ p.title }}</a>{% else %}{{ p.title }}{% endif %}{% if p.doi %}<div class="small muted">DOI {{ p.doi }}</div>{% endif %}</td>
+            <td class="small">{{ p.venue or '' }}</td><td><span class="badge">{{ p.source }}</span></td></tr>
+        {% endfor %}
+      </table></div>
+      {% if pubs|length > 60 %}<p class="small muted">Showing the 60 most recent of {{ pubs|length }}.</p>{% endif %}
+      {% else %}<p class="missing">No approved publications yet.</p>{% endif %}
+    </div>
+
+    {% if kind == 'faculty' %}
+    <div class="card">
+      <h3>Past grants &amp; projects</h3>
+      {% for a in awards %}<p style="margin:0 0 10px"><b>{{ a.title }}</b><br><span class="small">{{ a.funder or '' }}{% if a.year %} · {{ a.year }}{% endif %}{% if a.amount_text %} · {{ a.amount_text }}{% endif %}{% if a.source_url %} · <a href="{{ a.source_url }}" target="_blank" rel="noopener">source</a>{% endif %}</span></p>{% endfor %}
+      {% for p in projects %}<p style="margin:0 0 10px"><b>Project:</b> {{ p.title }}{% if p.source_url %} · <a class="small" href="{{ p.source_url }}" target="_blank" rel="noopener">source</a>{% endif %}</p>{% endfor %}
+      {% if not awards and not projects %}<p class="missing">No past grants or projects recorded in the dataset.</p>{% endif %}
+    </div>
+    {% endif %}
+  </div>
+
+  <div>
+    <div class="section-head" style="margin-bottom:14px"><h2 style="font-size:1.8rem">Matching Grants</h2><div class="rule"></div></div>
+    <p class="small muted">Open and upcoming calls ranked by match score against this profile's evidence.</p>
+    {% for g, score, ev in matched %}
+      <a class="grant-card" href="/grants/{{ g.id }}">
+        <div>{{ status_badge(g) }} <span class="badge {{ 'gold' if g.scope == 'UAE' else 'dark' }}">{{ g.scope }}</span> <span class="badge green">match score {{ score|score }}</span></div>
+        <h3 style="font-size:1.1rem">{{ g.title }}</h3>
+        <div class="facts"><span><i class="fas fa-landmark"></i> {{ g.funder or 'Funder not published' }}</span><span><i class="far fa-calendar-alt"></i> {{ deadline(g) }}</span></div>
+        {% set why = [] %}
+        {% for k in ['interests','publications','topics','keywords','past_grants'] %}{% if ev.get(k) and ev[k]['items'] %}{% set _ = why.append(ev[k]['items'][0].label) %}{% endif %}{% endfor %}
+        {% if why %}<div class="snippet small">Evidence: {{ why[:3]|join(' · ')|truncate(220) }}</div>{% endif %}
+      </a>
+    {% else %}
+      <div class="note">No open grant matches this profile strongly enough. If nobody fits well, the dashboard says so instead of forcing a match.</div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}{% if own and kind == 'faculty' %}{% include "_interest_picker_js.html" %}{% endif %}{% endblock %}

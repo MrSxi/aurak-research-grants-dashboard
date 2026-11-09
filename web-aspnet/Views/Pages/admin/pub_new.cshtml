@@ -1,0 +1,39 @@
+@{ ViewData["Title"] = "Add publication · Admin"; J lookup = Page["lookup"]; bool has = lookup.Truthy; string ownerSel = has ? lookup["owner"].ToString() : ""; string L(string k) => has ? lookup[k].Or("").ToString() : ""; }
+<div class="container page-head">
+  <div class="section-head"><h2>Add a Publication</h2><div class="rule"></div></div>
+  <p class="muted">For a faculty member or student whose paper was not picked up automatically. Look it up by DOI/OpenAlex ID to pre-fill the details, or enter them by hand from the official record.</p>
+</div>
+<div class="container grid-2">
+  <div>
+    <form class="card" method="post" action="/admin/publications/lookup">
+      <h3>1. Look up by ID (recommended)</h3>
+      <label for="owner1">Owner</label>
+      <select id="owner1" name="owner" required>@await Html.PartialAsync("admin/_OwnerOptions", new Args(ownerSel))</select>
+      <label for="identifier">DOI or OpenAlex work ID</label>
+      <input id="identifier" name="identifier" required placeholder="10.xxxx/… or W…">
+      <button class="btn" type="submit" style="margin-top:12px"><i class="fas fa-search"></i> Look up</button>
+    </form>
+    @if (M.recent)
+    {
+    <div class="card"><h3>Recently added manually</h3>
+      @foreach (var p in M.recent) {<p class="small" style="margin:0 0 6px">@p.title <span class="muted">(@p.owner_type @p.owner_id)</span></p>}
+    </div>
+    }
+  </div>
+  <form class="card" method="post" action="/admin/publications">
+    <h3>2. Confirm details</h3>
+    <label for="owner2">Owner</label>
+    <select id="owner2" name="owner" required>@await Html.PartialAsync("admin/_OwnerOptions", new Args(ownerSel))</select>
+    <label for="title">Title</label><input id="title" name="title" required value="@(has ? lookup["title"].ToString() : "")">
+    <div class="grid-2">
+      <div><label for="doi">DOI</label><input id="doi" name="doi" value="@L("doi")"></div>
+      <div><label for="oa">OpenAlex ID</label><input id="oa" name="openalex_id" value="@L("openalex_id")"></div>
+      <div><label for="venue">Venue</label><input id="venue" name="venue" value="@L("venue")"></div>
+      <div><label for="year">Year</label><input id="year" name="year" value="@L("year")"></div>
+    </div>
+    <label for="authors">Authors</label><input id="authors" name="authors" value="@L("authors")">
+    <label for="url">URL</label><input id="url" name="url" value="@L("url")">
+    <label for="abstract">Abstract</label><textarea id="abstract" name="abstract">@L("abstract")</textarea>
+    <button class="btn green" type="submit" style="margin-top:12px"><i class="fas fa-plus"></i> Add to database</button>
+  </form>
+</div>

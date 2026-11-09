@@ -1,0 +1,49 @@
+@{
+    J g = Page["g"]; bool has = g.Truthy;
+    ViewData["Title"] = (has ? "Edit" : "Add") + " grant · Admin";
+    string F(string key, string fallback = "") => has ? g[key].Or("").ToString() : fallback;  // {{ g.x or '' if g else '' }}
+    J flags = has ? g["eligibility_flags"] : J.None;
+    string Flag(string key) => has && flags.Truthy ? flags.Get(key, "").ToString() : "";
+}
+<div class="container page-head">
+  <div class="section-head"><h2>@(has ? "Edit Grant" : "Add a Grant Manually")</h2><div class="rule"></div></div>
+  <p class="muted">Use the funder's official page (e.g. Dubai RTA, Microsoft, AURAK internal seed grants). Copy values exactly as published and leave unknown fields empty. They will show as “Not published”.</p>
+</div>
+<div class="container">
+  <form class="card" method="post" action="/admin/grants/save">
+    @if (has) {<input type="hidden" name="id" value="@g["id"]">}
+    <div class="grid-2">
+      <div><label>Title *</label><input name="title" required value="@(has ? g["title"].ToString() : "")"></div>
+      <div><label>Funder's official page URL * (source)</label><input name="source_url" type="url" required value="@F("source_url")"></div>
+      <div><label>Funder</label><input name="funder" value="@F("funder")"></div>
+      <div><label>Programme</label><input name="programme" value="@F("programme")"></div>
+      <div><label>Type</label><select name="type">@foreach (var t in M.types) {<option @Sel(has && g["type"] == t)>@t</option>}</select></div>
+      <div><label>Scope</label><select name="scope"><option value="UAE" @Sel(!has || g["scope"] == "UAE")>UAE (national)</option><option value="international" @Sel(has && g["scope"] == "international")>International</option></select></div>
+      <div><label>Country</label><input name="country" value="@F("country", "United Arab Emirates")"></div>
+      <div><label>Emirate</label><select name="emirate"><option value="">—</option>@foreach (var e in new[] { "Abu Dhabi", "Dubai", "Sharjah", "Ajman", "Umm Al Quwain", "Ras Al Khaimah", "Fujairah" }) {<option @Sel(has && g["emirate"] == e)>@e</option>}</select></div>
+      <div><label>Open date</label><input type="date" name="open_date" value="@(has && g["open_date"].Truthy ? Iso(g["open_date"]) : "")"></div>
+      <div><label>Deadline</label><input type="date" name="deadline" value="@(has && g["deadline"].Truthy ? Iso(g["deadline"]) : "")"></div>
+      <div><label>Amount min</label><input name="amount_min" value="@F("amount_min")"></div>
+      <div><label>Amount max</label><input name="amount_max" value="@F("amount_max")"></div>
+      <div><label>Currency</label><input name="currency" placeholder="AED / USD / EUR" value="@F("currency")"></div>
+      <div><label>Amount as published (text)</label><input name="amount_text" value="@F("amount_text")"></div>
+      <div><label>Duration</label><input name="duration" value="@F("duration")"></div>
+      <div><label>Apply URL</label><input name="apply_url" type="url" value="@F("apply_url")"></div>
+      <div><label>Research areas (comma separated)</label><input name="research_areas" value="@(has ? Join(g["research_areas"].Or(J.Of(new List<J>())), ", ") : "")"></div>
+      <div><label>Keywords (comma separated)</label><input name="keywords" value="@(has ? Join(g["keywords"].Or(J.Of(new List<J>())), ", ") : "")"></div>
+      <div><label>Contact</label><input name="contact" value="@F("contact")"></div>
+      <div><label>Deadline note</label><input name="deadline_text" value="@F("deadline_text")"></div>
+    </div>
+    <label>Description</label><textarea name="description" rows="6">@F("description")</textarea>
+    <label>Eligibility</label><textarea name="eligibility_text">@F("eligibility_text")</textarea>
+    <div class="grid-2">
+      <div><label>Eligibility flag: emirate</label><input name="flag_emirate" placeholder="e.g. Dubai-based PIs only" value="@Flag("emirate")"></div>
+      <div><label>Eligibility flag: nationality</label><input name="flag_nationality" placeholder="e.g. UAE nationals only" value="@Flag("nationality")"></div>
+      <div><label>Eligibility flag: career stage</label><input name="flag_career_stage" placeholder="e.g. early-career, PhD students" value="@Flag("career_stage")"></div>
+      <div><label>Eligibility flag: applicant type</label><select name="flag_applicant_type"><option value="">Any</option>@foreach (var a in new[] { "faculty", "student", "faculty and students" }) {<option @Sel(has && flags.Truthy && flags.Get("applicant_type") == a)>@a</option>}</select></div>
+    </div>
+    <label>Eligibility warnings shown to users (one per line)</label><textarea name="eligibility_warnings" rows="2">@(has ? Join(g["eligibility_warnings"].Or(J.Of(new List<J>())), "\n") : "")</textarea>
+    <label>Required documents</label><textarea name="required_documents" rows="3">@F("required_documents")</textarea>
+    <div class="btn-row" style="margin-top:16px"><button class="btn lg" type="submit">Save grant</button><a href="/admin/grants">Cancel</a></div>
+  </form>
+</div>

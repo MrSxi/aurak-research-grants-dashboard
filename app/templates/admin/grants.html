@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% from "_macros.html" import status_badge, deadline %}
+{% block title %}Grants management · Admin{% endblock %}
+{% block content %}
+<div class="container page-head">
+  <div class="section-head"><h2>Grants Management</h2><div class="rule"></div></div>
+  <div class="btn-row">
+    <form method="post" action="/admin/refresh" style="display:inline"><button class="btn gold" type="submit"><i class="fas fa-sync-alt"></i> Refresh now</button></form>
+    <form method="get" class="btn-row" style="flex:1">
+      <input type="text" name="q" value="{{ args.q or '' }}" placeholder="Search title, funder…" style="max-width:320px">
+      <select name="status" style="max-width:200px">{% for v,l in [('all','All statuses'),('active','Open & forthcoming'),('open','Open'),('forthcoming','Forthcoming'),('unknown','Status not published'),('closed','Closed')] %}<option value="{{ v }}" {{ 'selected' if args.status == v }}>{{ l }}</option>{% endfor %}</select>
+      <select name="source" style="max-width:220px"><option value="">All sources</option>{% for k in ['manual','grants_gov','eu_ft','alqasimi','aljalila','dubai_rdi'] %}<option {{ 'selected' if args.source == k }}>{{ k }}</option>{% endfor %}</select>
+      <label class="check" style="margin:0"><input type="checkbox" name="hidden_only" value="1" {{ 'checked' if args.hidden_only }}> Hidden only</label>
+      <button class="btn ghost" type="submit">Filter</button>
+    </form>
+  </div>
+  <p class="muted" style="margin-top:12px">{{ total }} grants. Edits mark a grant as manually maintained, so scheduled refreshes will not overwrite them.</p>
+</div>
+<div class="container">
+  <div class="table-wrap"><table class="data">
+    <tr><th>Title</th><th>Source</th><th>Status</th><th>Deadline</th><th>Last checked</th><th></th></tr>
+    {% for g in rows %}
+    <tr>
+      <td><a href="/grants/{{ g.id }}">{{ g.title|truncate(110) }}</a><div class="small muted">{{ g.funder or '' }}</div></td>
+      <td class="small">{{ g.source }}{% if g.manual %} <span class="badge gold">manual</span>{% endif %}</td>
+      <td>{{ status_badge(g) }}{% if g.hidden %} <span class="badge dark">hidden</span>{% endif %}</td>
+      <td class="small nowrap">{{ deadline(g) }}</td>
+      <td class="small nowrap">{{ g.last_checked.strftime('%d %b %H:%M') }}</td>
+      <td class="nowrap"><a class="btn sm ghost" href="/admin/grants/{{ g.id }}/edit">Edit</a>
+        <form method="post" action="/admin/grants/{{ g.id }}/hide" style="display:inline"><button class="btn sm gray" type="submit">{{ 'Unhide' if g.hidden else 'Hide' }}</button></form></td>
+    </tr>
+    {% endfor %}
+  </table></div>
+  {% if pages > 1 %}<div class="pager">{% if page > 1 %}<a href="?{{ qs }}&page={{ page-1 }}">&laquo; Prev</a>{% endif %}<span class="cur">{{ page }} / {{ pages }}</span>{% if page < pages %}<a href="?{{ qs }}&page={{ page+1 }}">Next &raquo;</a>{% endif %}</div>{% endif %}
+</div>
+{% endblock %}

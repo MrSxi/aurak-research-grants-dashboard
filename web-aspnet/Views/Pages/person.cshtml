@@ -1,0 +1,137 @@
+@{
+    var person = M.person; string kind = M.kind.ToString(); bool own = Page["own"].Truthy; bool faculty = kind == "faculty";
+    ViewData["Title"] = person.full_name + " · AURAK Research Grants";
+    var pubs = (J)M.pubs;
+}
+<div class="container page-head">
+  <div class="crumbs"><a href="/researchers">Researchers</a> / @(faculty ? "Faculty" : "Student")</div>
+  @if (faculty)
+  {
+  <div class="person-head">
+    @await Html.PartialAsync("_Avatar", new Args(person, "lg"))
+    <div>
+      <h1>@person.full_name</h1>
+      <div class="lead head" style="font-size:1.2rem">@person.title.Or("")</div>
+      <div class="muted">@person.department.Or("")@if (person.school) {<text> · @person.school</text>}</div>
+    </div>
+  </div>
+  }
+  else
+  {
+    <h1>@person.full_name</h1>
+    <div class="muted">@("Student")@if (person.major) {<text> · @person.major</text>}@if (person.school) {<text> · @person.school</text>}</div>
+  }
+  @if (own) {<p class="small muted">This is how your profile appears to others. It is built from the AURAK faculty dataset and OpenAlex; new OpenAlex publications are added automatically every refresh.</p>}
+</div>
+
+<div class="container layout-main" style="margin-top:20px">
+  <div>
+    @if (faculty)
+    {
+    <div class="card">
+      <h3>Profile</h3>
+      <dl class="facts">
+        <dt>Email</dt><dd>@Missing(person.email)</dd>
+        <dt>Biography</dt><dd>@Missing(person.biography)</dd>
+        <dt>Links</dt><dd>
+          @if (person.profile_url) {<a href="@person.profile_url" target="_blank" rel="noopener">AURAK profile</a><text> · </text>}
+          @if (person.google_scholar_url) {<a href="@person.google_scholar_url" target="_blank" rel="noopener">Google Scholar</a><text> · </text>}
+          @{ var scopus = ((J)person.scopus_urls.Or(J.Of(new List<J>()))).ToList(); }
+          @for (int i = 0; i < scopus.Count; i++) {<a href="@scopus[i]" target="_blank" rel="noopener">@("Scopus" + (scopus.Count > 1 ? " " + (i + 1) : ""))</a><text> · </text>}
+          @if (person.orcid_url) {<a href="@person.orcid_url" target="_blank" rel="noopener">ORCID</a><text> · </text>}
+          @if (person.openalex_id) {<a href="https://openalex.org/@person.openalex_id" target="_blank" rel="noopener">OpenAlex</a>} else {<span class="missing">No OpenAlex profile linked</span>}
+        </dd>
+        @if (person.works_count) {<dt>OpenAlex</dt><dd>@person.works_count works · @person.cited_by_count citations</dd>}
+      </dl>
+    </div>
+    }
+
+    <div class="card">
+      <h3>Research interests</h3>
+      @if (M.interests)
+      {
+        <div class="chips">@foreach (var i in M.interests)
+        {
+        <span class="chip approved" @(i.source == "faculty" ? Raw("title=\"Added by the faculty member\"") : Raw(""))>@Truncate(i.text, 120)@if (i.source == "faculty") {<text> <span class="badge gold">self-added</span></text>}
+          @if (faculty && M.user.role == "admin")
+          {
+            <form method="post" action="/admin/interests/@i.id/delete" style="display:inline"><button type="submit" title="Remove (admin)">&times;</button></form>
+          }
+          else if (own)
+          {
+            <form method="post" action="/me/interests/@i.id/delete" style="display:inline"><button type="submit" title="Remove">&times;</button></form>
+          }
+        </span>}</div>
+      }
+      else {<p class="missing">No research interests published.</p>}
+      @if (own && faculty)
+      {
+        <form method="post" action="/me/interests" data-require-interest="1" style="margin-top:10px">
+          @await Html.PartialAsync("_InterestPicker")
+          <input type="hidden" name="text" id="interests-hidden">
+          <button class="btn" type="submit"><i class="fas fa-plus"></i> Add interests</button>
+          <p class="small muted">Add or remove interests freely (no approval needed). Your grant matches update automatically. An administrator may remove interests that do not fit.</p>
+        </form>
+      }
+      @if (faculty && person.openalex_topics)
+      {
+        <h4 style="margin-top:14px">OpenAlex research topics</h4>
+        <div class="chips">@foreach (var t in person.openalex_topics) {<span class="chip">@t</span>}</div>
+      }
+      @if (M.pclusters)
+      {
+        <h4 style="margin-top:14px">Research clusters <span class="badge gold">AI-suggested membership</span></h4>
+        <div class="chips">@foreach (var pc in M.pclusters) {<a class="chip @(pc[2] ? "approved" : "")" href="/clusters/@pc[0].key">@pc[0].name</a>}</div>
+      }
+    </div>
+
+    <div class="card">
+      <h3>Publications <span class="muted small">(@pubs.Count)</span></h3>
+      @if (pubs.Truthy)
+      {
+      <div class="table-wrap"><table class="data">
+        <tr><th>Year</th><th>Title</th><th>Venue</th><th>Source</th></tr>
+        @foreach (dynamic p in pubs.Slice(0, 60))
+        {
+        <tr><td>@p.year.Or("")</td>
+            <td>@if (p.url) {<a href="@p.url" target="_blank" rel="noopener">@p.title</a>} else {<text>@p.title</text>}@if (p.doi) {<div class="small muted">DOI @p.doi</div>}</td>
+            <td class="small">@p.venue.Or("")</td><td><span class="badge">@p.source</span></td></tr>
+        }
+      </table></div>
+      @if (pubs.Count > 60) {<p class="small muted">Showing the 60 most recent of @pubs.Count.</p>}
+      }
+      else {<p class="missing">No approved publications yet.</p>}
+    </div>
+
+    @if (faculty)
+    {
+    <div class="card">
+      <h3>Past grants &amp; projects</h3>
+      @foreach (var a in M.awards) {<p style="margin:0 0 10px"><b>@a.title</b><br><span class="small">@a.funder.Or("")@if (a.year) {<text> · @a.year</text>}@if (a.amount_text) {<text> · @a.amount_text</text>}@if (a.source_url) {<text> · <a href="@a.source_url" target="_blank" rel="noopener">source</a></text>}</span></p>}
+      @foreach (var p in M.projects) {<p style="margin:0 0 10px"><b>Project:</b> @(p.title)@if (p.source_url) {<text> · <a class="small" href="@p.source_url" target="_blank" rel="noopener">source</a></text>}</p>}
+      @if (!M.awards && !M.projects) {<p class="missing">No past grants or projects recorded in the dataset.</p>}
+    </div>
+    }
+  </div>
+
+  <div>
+    <div class="section-head" style="margin-bottom:14px"><h2 style="font-size:1.8rem">Matching Grants</h2><div class="rule"></div></div>
+    <p class="small muted">Open and upcoming calls ranked by match score against this profile's evidence.</p>
+    @if (M.matched)
+    {
+      foreach (var row in M.matched)
+      {
+        var g = row[0]; var score = row[1]; var ev = row[2];
+      <a class="grant-card" href="/grants/@g.id">
+        <div>@await Html.PartialAsync("_StatusBadge", new Args(g)) <span class="badge @(g.scope == "UAE" ? "gold" : "dark")">@g.scope</span> <span class="badge green">match score @Score(score)</span></div>
+        <h3 style="font-size:1.1rem">@g.title</h3>
+        <div class="facts"><span><i class="fas fa-landmark"></i> @g.funder.Or("Funder not published")</span><span><i class="far fa-calendar-alt"></i> @await Html.PartialAsync("_Deadline", new Args(g))</span></div>
+        @{ var why = new List<string>(); foreach (var k in new[] { "interests", "publications", "topics", "keywords", "past_grants" }) { var e = ev.Get(k); if (e.Truthy && e["items"].Truthy) why.Add(e["items"][0]["label"].ToString()); } }
+        @if (why.Count > 0) {<div class="snippet small">Evidence: @Truncate(string.Join(" · ", why.Take(3)), 220)</div>}
+      </a>
+      }
+    }
+    else {<div class="note">No open grant matches this profile strongly enough. If nobody fits well, the dashboard says so instead of forcing a match.</div>}
+  </div>
+</div>
+@section scripts {@if (own && faculty) { @await Html.PartialAsync("_InterestPickerJs") }}

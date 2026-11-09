@@ -1,0 +1,32 @@
+# Secrets and local settings
+.env
+.claude/
+
+# Python
+.venv/
+.venv-local/
+.venv.from-friend-laptop/
+__pycache__/
+*.pyc
+
+# .NET build output
+web-aspnet/bin/
+web-aspnet/obj/
+
+# Data (databases and the faculty dataset are provided separately, not stored in git)
+data/
+*.db
+*.db-shm
+*.db-wal
+*.bak
+*.zip
+openalex_test_output/
+
+# Project notes, recordings and internal documents (not part of the software)
+Very Important Khouloud Requirements/
+Updated Pre-Meeting Docs/
+design_reference/
+Meeting Notes*
+software engineering*.pdf
+*.ogg
+Research Software Competition Project/

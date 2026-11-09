@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit' if g else 'Add' }} grant · Admin{% endblock %}
+{% block content %}
+<div class="container page-head">
+  <div class="section-head"><h2>{{ 'Edit Grant' if g else 'Add a Grant Manually' }}</h2><div class="rule"></div></div>
+  <p class="muted">Use the funder's official page (e.g. Dubai RTA, Microsoft, AURAK internal seed grants). Copy values exactly as published and leave unknown fields empty. They will show as “Not published”.</p>
+</div>
+<div class="container">
+  <form class="card" method="post" action="/admin/grants/save">
+    {% if g %}<input type="hidden" name="id" value="{{ g.id }}">{% endif %}
+    <div class="grid-2">
+      <div><label>Title *</label><input name="title" required value="{{ g.title if g else '' }}"></div>
+      <div><label>Funder's official page URL * (source)</label><input name="source_url" type="url" required value="{{ g.source_url or '' if g else '' }}"></div>
+      <div><label>Funder</label><input name="funder" value="{{ g.funder or '' if g else '' }}"></div>
+      <div><label>Programme</label><input name="programme" value="{{ g.programme or '' if g else '' }}"></div>
+      <div><label>Type</label><select name="type">{% for t in types %}<option {{ 'selected' if g and g.type == t }}>{{ t }}</option>{% endfor %}</select></div>
+      <div><label>Scope</label><select name="scope"><option value="UAE" {{ 'selected' if not g or g.scope == 'UAE' }}>UAE (national)</option><option value="international" {{ 'selected' if g and g.scope == 'international' }}>International</option></select></div>
+      <div><label>Country</label><input name="country" value="{{ g.country or '' if g else 'United Arab Emirates' }}"></div>
+      <div><label>Emirate</label><select name="emirate"><option value="">—</option>{% for e in ['Abu Dhabi','Dubai','Sharjah','Ajman','Umm Al Quwain','Ras Al Khaimah','Fujairah'] %}<option {{ 'selected' if g and g.emirate == e }}>{{ e }}</option>{% endfor %}</select></div>
+      <div><label>Open date</label><input type="date" name="open_date" value="{{ g.open_date.isoformat() if g and g.open_date else '' }}"></div>
+      <div><label>Deadline</label><input type="date" name="deadline" value="{{ g.deadline.isoformat() if g and g.deadline else '' }}"></div>
+      <div><label>Amount min</label><input name="amount_min" value="{{ g.amount_min or '' if g else '' }}"></div>
+      <div><label>Amount max</label><input name="amount_max" value="{{ g.amount_max or '' if g else '' }}"></div>
+      <div><label>Currency</label><input name="currency" placeholder="AED / USD / EUR" value="{{ g.currency or '' if g else '' }}"></div>
+      <div><label>Amount as published (text)</label><input name="amount_text" value="{{ g.amount_text or '' if g else '' }}"></div>
+      <div><label>Duration</label><input name="duration" value="{{ g.duration or '' if g else '' }}"></div>
+      <div><label>Apply URL</label><input name="apply_url" type="url" value="{{ g.apply_url or '' if g else '' }}"></div>
+      <div><label>Research areas (comma separated)</label><input name="research_areas" value="{{ (g.research_areas or [])|join(', ') if g else '' }}"></div>
+      <div><label>Keywords (comma separated)</label><input name="keywords" value="{{ (g.keywords or [])|join(', ') if g else '' }}"></div>
+      <div><label>Contact</label><input name="contact" value="{{ g.contact or '' if g else '' }}"></div>
+      <div><label>Deadline note</label><input name="deadline_text" value="{{ g.deadline_text or '' if g else '' }}"></div>
+    </div>
+    <label>Description</label><textarea name="description" rows="6">{{ g.description or '' if g else '' }}</textarea>
+    <label>Eligibility</label><textarea name="eligibility_text">{{ g.eligibility_text or '' if g else '' }}</textarea>
+    <div class="grid-2">
+      <div><label>Eligibility flag: emirate</label><input name="flag_emirate" placeholder="e.g. Dubai-based PIs only" value="{{ g.eligibility_flags.get('emirate','') if g and g.eligibility_flags else '' }}"></div>
+      <div><label>Eligibility flag: nationality</label><input name="flag_nationality" placeholder="e.g. UAE nationals only" value="{{ g.eligibility_flags.get('nationality','') if g and g.eligibility_flags else '' }}"></div>
+      <div><label>Eligibility flag: career stage</label><input name="flag_career_stage" placeholder="e.g. early-career, PhD students" value="{{ g.eligibility_flags.get('career_stage','') if g and g.eligibility_flags else '' }}"></div>
+      <div><label>Eligibility flag: applicant type</label><select name="flag_applicant_type"><option value="">Any</option>{% for a in ['faculty','student','faculty and students'] %}<option {{ 'selected' if g and g.eligibility_flags and g.eligibility_flags.get('applicant_type') == a }}>{{ a }}</option>{% endfor %}</select></div>
+    </div>
+    <label>Eligibility warnings shown to users (one per line)</label><textarea name="eligibility_warnings" rows="2">{{ (g.eligibility_warnings or [])|join('\n') if g else '' }}</textarea>
+    <label>Required documents</label><textarea name="required_documents" rows="3">{{ g.required_documents or '' if g else '' }}</textarea>
+    <div class="btn-row" style="margin-top:16px"><button class="btn lg" type="submit">Save grant</button><a href="/admin/grants">Cancel</a></div>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,10 @@
+﻿@inherits AurakView<Args>
+@{ var g = Model.A; }
+@if (g.deadline)
+{
+    <text>@D(g.deadline) </text>
+    int? left = DaysLeft(g.deadline);
+    if (left != null && left >= 0 && left <= 30) {<span class="badge red">@($"{left} day{(left == 1 ? "" : "s")} left")</span>}
+    <text> </text>
+}
+else {<span class="missing">Not published</span>}

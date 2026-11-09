@@ -1,0 +1,92 @@
+@{
+    var grant = M.grant; var src = M.src;
+    ViewData["Title"] = grant.title + " · AURAK Research Grants";
+    string srcName = src ? src.name.ToString() : grant.source.ToString();
+}
+<div class="container page-head">
+  <div class="crumbs"><a href="/grants">Grants</a> / @grant.funder.Or("Funder")</div>
+  <div>
+    @await Html.PartialAsync("_StatusBadge", new Args(grant))
+    <span class="badge @(grant.scope == "UAE" ? "gold" : "dark")">@(grant.scope == "UAE" ? "UAE" : "International")@if (grant.emirate) {<text> · @grant.emirate</text>}</span>
+    <span class="badge">@Cap(grant.type)</span>
+    @if (grant.hidden) {<span class="badge dark">Hidden from users</span>}
+  </div>
+  <h1 style="margin-top:10px">@grant.title</h1>
+  <div class="btn-row">
+    @if (grant.apply_url) {<a class="btn lg" href="@grant.apply_url" target="_blank" rel="noopener">Apply on the funder's site <i class="fas fa-external-link-alt small"></i></a>}
+    <a class="btn lg gold" href="/chat?grant_id=@grant.id"><i class="far fa-comments"></i> Ask the assistant about this grant</a>
+    @if (M.user.role == "admin")
+    {
+      <a class="btn ghost" href="/admin/grants/@grant.id/edit"><i class="fas fa-edit"></i> Edit</a>
+      <form method="post" action="/admin/grants/@grant.id/hide" style="display:inline"><button class="btn gray" type="submit">@(grant.hidden ? "Unhide" : "Hide")</button></form>
+    }
+  </div>
+</div>
+
+<div class="container layout-main" style="margin-top:24px">
+  <div>
+    @foreach (var w in grant.eligibility_warnings.Or(J.Of(new List<J>()))) {<div class="warn"><i class="fas fa-exclamation-triangle"></i>@w</div>}
+    <div class="card">
+      <h3>Key facts</h3>
+      <dl class="facts">
+        <dt>Funder</dt><dd>@Missing(grant.funder)</dd>
+        <dt>Programme</dt><dd>@Missing(grant.programme)</dd>
+        <dt>Deadline</dt><dd>@await Html.PartialAsync("_Deadline", new Args(grant))@if (grant.deadlines && grant.deadlines.Count > 1) {<div class="small muted">All published deadlines: @Join(grant.deadlines, ", ")</div>}@if (grant.deadline_text) {<div class="small muted">@grant.deadline_text</div>}</dd>
+        <dt>Opens</dt><dd>@Missing(D(grant.open_date))</dd>
+        <dt>Amount</dt><dd>@await Html.PartialAsync("_Amount", new Args(grant))</dd>
+        <dt>Duration</dt><dd>@Missing(grant.duration)</dd>
+        <dt>Country / emirate</dt><dd>@Missing(grant.country)@if (grant.emirate) {<text> · @grant.emirate</text>}</dd>
+        <dt>Research areas</dt><dd>@Missing(Join(grant.research_areas, ", "))</dd>
+        @if (grant.keywords) {<dt>Keywords</dt><dd>@Join(grant.keywords, ", ")</dd>}
+        <dt>Contact</dt><dd>@Missing(grant.contact)</dd>
+        <dt>Source</dt><dd>@if (grant.source_url) {<a href="@grant.source_url" target="_blank" rel="noopener">@srcName</a>} else {<text>@srcName</text>}<div class="small muted">First seen @Strf(grant.first_seen, "%d %b %Y") · last updated @Strf(grant.last_checked, "%d %b %Y %H:%M") UTC</div></dd>
+      </dl>
+    </div>
+    <div class="card">
+      <h3>Description</h3>
+      @if (grant.description) {<div class="prose">@Truncate(grant.description, 5000)</div>} else {<p class="missing">Not published by the source.</p>}
+    </div>
+    <div class="card">
+      <h3>Eligibility</h3>
+      @if (grant.eligibility_text) {<div class="prose">@Truncate(grant.eligibility_text, 3000)</div>} else {<p class="missing">Not published in the source data. Check the funder's page.</p>}
+      @if (grant.eligibility_flags)
+      {
+        var flags = ((J)grant.eligibility_flags).Items().Where(kv => kv.Value.Truthy).ToList();
+        <p class="small muted">Flags: @for (int i = 0; i < flags.Count; i++) {<text>@flags[i].Key.ToString().Replace("_", " "): @(flags[i].Value.IsString ? flags[i].Value.ToString() : Join(flags[i].Value, ", "))@if (i < flags.Count - 1) {<text> · </text>}</text>}</p>
+      }
+    </div>
+    <div class="card">
+      <h3>Required documents</h3>
+      @if (grant.required_documents) {<div class="prose">@grant.required_documents</div>} else {<p class="missing">Not published in the source data. Check the funder's page.</p>}
+    </div>
+  </div>
+
+  <div>
+    @if (M.gclusters)
+    {
+    <div class="card" style="border-top:4px solid var(--secondary)">
+      <h3><i class="fas fa-project-diagram"></i> Research cluster</h3>
+      @foreach (var gc in M.gclusters)
+      {
+        var c = gc[0];
+        <p style="margin:0 0 8px"><a href="/clusters/@c.key"><b>@c.name</b></a><br>
+        <span class="small">@gc[2] faculty work in this cluster across @gc[3] school(s).</span></p>
+      }
+      <p class="small muted" style="margin:0">Clusters are proposed by this project; AURAK has no official research clusters. Membership is AI-suggested.</p>
+    </div>
+    }
+    <div class="section-head" style="margin:22px 0 14px"><h2 style="font-size:1.8rem">Matched AURAK Faculty</h2><div class="rule"></div></div>
+    @if (M.fac)
+    {
+      <p class="small muted">Faculty whose research matches this scope, from @M.schools.Count school(s). A match does not mean the person is available or willing to collaborate.</p>
+      foreach (var m in M.fac) { @await Html.PartialAsync("_MatchCard", new Args(m, M.people.Get("faculty|" + m.person_id), "faculty")) }
+    }
+    else {<div class="note">No strong faculty match in the current AURAK dataset for this grant. Nobody's interests, publications or past grants are close enough to its scope, so no match is forced.</div>}
+    <div class="section-head" style="margin:28px 0 14px"><h2 style="font-size:1.8rem">Matched Students</h2><div class="rule"></div></div>
+    @if (M.stu)
+    {
+      foreach (var m in M.stu) { @await Html.PartialAsync("_MatchCard", new Args(m, M.people.Get("student|" + m.person_id), "student")) }
+    }
+    else {<div class="note">No student with approved interests or publications matches this grant yet.</div>}
+  </div>
+</div>

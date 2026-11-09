@@ -1,0 +1,25 @@
+@{ ViewData["Title"] = "Admin · AURAK Research Grants"; var stats = M.stats; var state = M.state; }
+<section class="section intro" style="padding-bottom:24px">
+  <div class="container">
+    <h1>Administration</h1>
+    <div class="lead">Admin view · @M.user.name</div>
+    <p>Approve student submissions, add publications and grants that were not picked up automatically, monitor grant sources and browse the database. Only administrators can see raw data.</p>
+    <div class="btn-row">
+      <a class="btn lg" href="/admin/queue">@("Approval queue")@if (stats.pending) {<text> (@stats.pending)</text>}</a>
+      <a class="btn lg" href="/admin/publications/new">Add a publication</a>
+      <form method="post" action="/admin/refresh" style="display:inline"><button class="btn lg gold" type="submit" @If(state.running, "disabled")><i class="fas fa-sync-alt"></i> Refresh now</button></form>
+    </div>
+    @if (state.running) {<div class="warn" style="margin-top:14px"><i class="fas fa-spinner fa-spin"></i>Refresh running: @state.step (started @Strf(state.started_at, "%H:%M:%S") UTC). Reload to update.</div>}
+    else if (state.last_finished) {<p class="small muted" style="margin-top:10px">Last refresh finished @Strf(state.last_finished, "%d %b %Y %H:%M") UTC: @state.last_summary</p>}
+  </div>
+</section>
+<div class="container">
+  <div class="stats">
+    @foreach (var (label, key) in new[] { ("Faculty", "faculty"), ("Faculty linked to OpenAlex", "openalex"), ("Students (signed up)", "students"), ("Publications", "publications"), ("Grants (visible)", "grants"), ("Open & upcoming", "active"), ("Pending approvals", "pending"), ("Cached matches", "matches"), ("Notifications", "notifications") })
+    {
+      <div class="stat"><strong>@stats[key]</strong><span>@label</span></div>
+    }
+  </div>
+  <div class="section-head" style="margin-top:40px"><h2 style="font-size:1.8rem">Recent Ingestion Runs</h2><div class="rule"></div><a class="view-all" href="/admin/sources">Source health <i class="fas fa-chevron-right small"></i></a></div>
+  @await Html.PartialAsync("admin/_Runs")
+</div>

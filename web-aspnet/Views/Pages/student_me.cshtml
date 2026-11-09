@@ -1,0 +1,95 @@
+@{
+    ViewData["Title"] = "My profile · AURAK Research Grants";
+    var st = M.st; var lookup = M.lookup; var interests = ((J)M.interests).ToList(); var pubs = ((J)M.pubs).ToList();
+}
+<div class="container page-head">
+  <h1>@st.full_name</h1>
+  <div class="muted">@("Student")@if (st.major) {<text> · @st.major</text>}@if (st.school) {<text> · @st.school</text>} · @st.email</div>
+  <p class="small muted">Your interests and publications are reviewed by an administrator. Once approved, they are added to the database and used for matching straight away.</p>
+</div>
+
+<div class="container layout-main" style="margin-top:16px">
+  <div>
+    <div class="card">
+      <h3>Research interests</h3>
+      <div class="chips">
+        @foreach (dynamic i in interests)
+        {
+          <span class="chip @i.status" title="@i.reason.Or("")">@i.text <span class="badge @i.status">@i.status</span>
+            <form method="post" action="/me/interests/@i.id/delete" style="display:inline"><button type="submit" title="Remove">&times;</button></form>
+          </span>
+        }
+        @if (interests.Count == 0) {<p class="missing">No interests yet. Add your first one below.</p>}
+      </div>
+      @foreach (dynamic i in interests.Where(x => x["status"] == "denied" && x["reason"].Truthy)) {<p class="small" style="color:var(--primary)">“@i.text” was denied: @i.reason</p>}
+      <form method="post" action="/me/interests" data-require-interest="1">
+        @await Html.PartialAsync("_InterestPicker")
+        <input type="hidden" name="text" id="interests-hidden">
+        <button class="btn" type="submit"><i class="fas fa-plus"></i> Submit interests for approval</button>
+      </form>
+    </div>
+
+    <div class="card" id="publications">
+      <h3>Publications</h3>
+      <p class="small muted">Proof is required: enter a DOI (e.g. <code>10.1109/ACCESS.2026.3683610</code>) or an OpenAlex work ID (<code>W…</code>). The system looks it up in OpenAlex, then Crossref, and fills in the details.</p>
+      <form method="post" action="/me/publications/lookup" class="btn-row">
+        <input type="text" name="identifier" placeholder="DOI or OpenAlex ID" required style="flex:1;min-width:240px">
+        <button class="btn" type="submit"><i class="fas fa-search"></i> Look up</button>
+      </form>
+      @if (lookup)
+      {
+        <div class="card" style="margin-top:14px;border-left:5px solid var(--secondary)">
+          <b>Found in @Cap(lookup.lookup_source):</b>
+          <dl class="facts" style="margin-top:8px">
+            <dt>Title</dt><dd>@Missing(lookup.title)</dd>
+            <dt>Venue</dt><dd>@Missing(lookup.venue)</dd>
+            <dt>Year</dt><dd>@Missing(lookup.year)</dd>
+            <dt>Authors</dt><dd>@Missing(lookup.authors)</dd>
+            <dt>DOI</dt><dd>@Missing(lookup.doi)</dd>
+          </dl>
+          @if (!lookup.name_in_authors) {<div class="warn"><i class="fas fa-exclamation-triangle"></i>Your name was not found in the author list. The administrator will check this before approving.</div>}
+          <form method="post" action="/me/publications">
+            <input type="hidden" name="doi" value="@lookup.doi.Or("")"><input type="hidden" name="openalex_id" value="@lookup.openalex_id.Or("")">
+            <button class="btn green" type="submit"><i class="fas fa-paper-plane"></i> Submit for approval</button>
+          </form>
+        </div>
+      }
+      @if (pubs.Count > 0)
+      {
+      <div class="table-wrap" style="margin-top:16px"><table class="data">
+        <tr><th>Status</th><th>Title</th><th>Year</th><th>ID</th></tr>
+        @foreach (dynamic p in pubs)
+        {
+        <tr><td><span class="badge @p.status">@p.status</span>@if (p.reason) {<div class="small">@p.reason</div>}</td>
+            <td>@if (p.url) {<a href="@p.url" target="_blank" rel="noopener">@p.title</a>} else {<text>@p.title</text>}<div class="small muted">@p.venue.Or("")</div></td>
+            <td>@p.year.Or("")</td><td class="small">@p.doi.Or(p.openalex_id)</td></tr>
+        }
+      </table></div>
+      }
+    </div>
+  </div>
+
+  <div>
+    <div class="section-head" style="margin-bottom:14px"><h2 style="font-size:1.8rem">My Matching Grants</h2><div class="rule"></div></div>
+    @if (M.matched)
+    {
+      foreach (var row in M.matched)
+      {
+        var g = row[0]; var score = row[1]; var ev = row[2];
+      <a class="grant-card" href="/grants/@g.id">
+        <div>@await Html.PartialAsync("_StatusBadge", new Args(g)) <span class="badge @(g.scope == "UAE" ? "gold" : "dark")">@g.scope</span> <span class="badge green">match score @Score(score)</span></div>
+        <h3 style="font-size:1.1rem">@g.title</h3>
+        <div class="facts"><span><i class="fas fa-landmark"></i> @g.funder.Or("Funder not published")</span><span><i class="far fa-calendar-alt"></i> @await Html.PartialAsync("_Deadline", new Args(g))</span></div>
+        @{ var why = new List<string>(); foreach (var k in new[] { "interests", "publications", "keywords" }) { var e = ev.Get(k); if (e.Truthy && e["items"].Truthy) why.Add(e["items"][0]["label"].ToString()); } }
+        @if (why.Count > 0) {<div class="snippet small">Evidence: @Truncate(string.Join(" · ", why), 200)</div>}
+      </a>
+      }
+    }
+    else
+    {
+      bool anyApproved = interests.Any(x => x["status"] == "approved") || pubs.Any(x => x["status"] == "approved");
+      <div class="note">@(anyApproved ? "No open grant matches your approved evidence strongly enough yet." : "Matches appear once an administrator approves at least one interest or publication.")</div>
+    }
+  </div>
+</div>
+@section scripts {@await Html.PartialAsync("_InterestPickerJs")}

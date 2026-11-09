@@ -1,0 +1,76 @@
+@{ ViewData["Title"] = "Research Assistant · AURAK Research Grants"; var g = M.ctx_grant; }
+<div class="container page-head">
+  <div class="section-head"><h2>Research Assistant</h2><div class="rule"></div></div>
+  <p class="muted">Ask about grants, who at AURAK works near your area, how to form a team for a grant, or general research questions. Answers use records retrieved from the AURAK database (retrieval-augmented generation) with @M.model_desc. Names, deadlines, amounts and links come only from those records.</p>
+  @if (!M.available) {<div class="warn"><i class="fas fa-exclamation-triangle"></i>@M.unavailable The rest of the dashboard works normally, and you will still see the records the assistant would use.</div>}
+  @if (g) {<div class="note">Asking about: <a href="/grants/@g.id"><b>@g.title</b></a></div>}
+</div>
+<div class="container">
+  <div class="prompts">
+    @if (g) {<button type="button">Who at AURAK could apply for this grant and why?</button><button type="button">Summarise the eligibility and deadline of this grant.</button>}
+    <button type="button">Which open grants fit machine learning research?</button>
+    <button type="button">Who works near sustainability and renewable energy?</button>
+    <button type="button">Form a team for a health and AI grant.</button>
+    <button type="button">Which UAE grants are open right now?</button>
+  </div>
+  <div class="chat-box">
+    <div class="chat-log" id="log">
+      <div class="msg">Hello @M.user.name. I can help you find grants and AURAK collaborators. What are you working on?</div>
+    </div>
+    <form class="chat-form" id="chat-form">
+      <input type="text" id="question" placeholder="Type your question…" autocomplete="off" required>
+      <button class="btn" type="submit" id="send"><i class="fas fa-paper-plane"></i> Send</button>
+    </form>
+  </div>
+</div>
+@section scripts {
+<script>
+(function () {
+  const log = document.getElementById('log'), form = document.getElementById('chat-form'), input = document.getElementById('question'), send = document.getElementById('send');
+  const grantId = @(g ? g.id.ToString() : "null");
+  const history = [];
+  function esc(s) { return s.replace(/[&<>"]/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[c])); }
+  function fmt(s) { return esc(s).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/(https?:\/\/[^\s)]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>'); }
+  function add(cls, html) { const d = document.createElement('div'); d.className = 'msg ' + cls; d.innerHTML = html; log.appendChild(d); log.scrollTop = log.scrollHeight; return d; }
+  async function ask(q) {
+    add('user', esc(q)); input.value = ''; send.disabled = true;
+    const wait = add('', '<i class="fas fa-spinner fa-spin"></i> Searching the AURAK database…');
+    // The answer streams in as NDJSON: a header with sources, then text deltas, then {done}.
+    let answer = '', sourcesHtml = '', started = Date.now(), timer = null;
+    const render = () => { wait.innerHTML = (answer ? fmt(answer) : '<i class="fas fa-spinner fa-spin"></i> The local model is reading the records… (' + Math.round((Date.now() - started) / 1000) + ' s)') + sourcesHtml; log.scrollTop = log.scrollHeight; };
+    try {
+      const r = await fetch('/api/chat', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({question: q, history, grant_id: grantId})});
+      const reader = r.body.getReader(), dec = new TextDecoder();
+      let buf = '';
+      timer = setInterval(() => { if (!answer) render(); }, 1000);
+      while (true) {
+        const {value, done} = await reader.read();
+        if (done) break;
+        buf += dec.decode(value, {stream: true});
+        let nl;
+        while ((nl = buf.indexOf('\n')) >= 0) {
+          const line = buf.slice(0, nl).trim(); buf = buf.slice(nl + 1);
+          if (!line) continue;
+          const ev = JSON.parse(line);
+          if (ev.sources) {
+            if (ev.sources.length) sourcesHtml = '<div class="src"><b>' + (ev.available === false ? 'Records retrieved for your question:' : 'Sources:') + '</b><br>' +
+              ev.sources.map(s => '[' + esc(s.tag) + '] <a href="' + s.url + '">' + esc(s.label) + '</a>').join('<br>') + '</div>';
+            if (ev.available === false) wait.classList.add('err');
+          }
+          if (ev.delta) answer += ev.delta;
+          if (ev.error) wait.classList.add('err');
+          render();
+        }
+      }
+      history.push({role: 'user', content: q}, {role: 'assistant', content: answer});
+    } catch (e) { wait.innerHTML = 'Something went wrong. Please try again.'; wait.classList.add('err'); }
+    clearInterval(timer);
+    send.disabled = false; input.focus(); log.scrollTop = log.scrollHeight;
+  }
+  form.addEventListener('submit', e => { e.preventDefault(); if (input.value.trim()) ask(input.value.trim()); });
+  document.querySelectorAll('.prompts button').forEach(b => b.addEventListener('click', () => ask(b.textContent)));
+  const pre = new URLSearchParams(location.search).get('q');
+  if (pre) ask(pre);
+})();
+</script>
+}

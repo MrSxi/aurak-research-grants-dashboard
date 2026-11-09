@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Source health · Admin{% endblock %}
+{% block content %}
+<div class="container page-head">
+  <div class="section-head"><h2>Source Health</h2><div class="rule"></div></div>
+  <div class="btn-row">
+    <form method="post" action="/admin/refresh"><button class="btn gold lg" type="submit" {{ 'disabled' if state.running }}><i class="fas fa-sync-alt"></i> Refresh now</button></form>
+    <span class="muted">Automatic refresh every {{ refresh_hours|int }} hours{% if next_run %} · next run {{ next_run.strftime('%d %b %Y %H:%M %Z') }}{% endif %}. A failing source keeps its last good data.</span>
+  </div>
+  {% if state.running %}<div class="warn"><i class="fas fa-spinner fa-spin"></i>Refresh running: {{ state.step }}. Reload to update.</div>{% endif %}
+</div>
+<div class="container">
+  <div class="table-wrap"><table class="data">
+    <tr><th>Source</th><th>Method</th><th>Scope</th><th>Status</th><th>Records</th><th>Last run (UTC)</th><th>Last success</th><th>Last error / notes</th></tr>
+    {% for s in rows %}
+    <tr>
+      <td><b>{{ s.name }}</b>{% if s.url %}<div class="small"><a href="{{ s.url }}" target="_blank" rel="noopener">{{ s.url|truncate(50) }}</a></div>{% endif %}</td>
+      <td><span class="badge">{{ s.method }}</span></td><td>{{ s.scope }}</td>
+      <td>{% if s.last_status == 'ok' %}<span class="badge green">OK</span>{% elif s.last_status == 'error' %}<span class="badge red">Error</span>{% elif s.last_status == 'monitored' %}<span class="badge gold">Monitored</span>{% elif s.method == 'manual' %}<span class="badge">Manual entry</span>{% else %}<span class="badge">Not run yet</span>{% endif %}</td>
+      <td>{{ s.records_count }}</td>
+      <td class="small nowrap">{{ s.last_run_at.strftime('%d %b %H:%M') if s.last_run_at else '—' }}</td>
+      <td class="small nowrap">{{ s.last_success_at.strftime('%d %b %H:%M') if s.last_success_at else '—' }}</td>
+      <td class="small">{% if s.last_error %}<span style="color:var(--primary)">{{ s.last_error|truncate(200) }}</span><br>{% endif %}<span class="muted">{{ s.notes or '' }}</span></td>
+    </tr>
+    {% endfor %}
+  </table></div>
+  <div class="card" style="margin-top:16px">
+    <h3 style="font-size:1.2rem">What the statuses mean</h3>
+    <dl class="facts">
+      <dt><span class="badge green">OK</span></dt><dd>The source was read successfully on the last refresh and its grants were added or updated automatically.</dd>
+      <dt><span class="badge gold">Monitored</span></dt><dd>The funder's page was reached, but it currently publishes no call that can be read as a grant (for example, a programme overview or a page built with JavaScript). It is checked automatically every refresh. Nothing is entered by hand.</dd>
+      <dt><span class="badge red">Error</span></dt><dd>The last refresh could not read the source (site down, timeout). Its previous grants stay on the dashboard, and the next refresh tries again.</dd>
+    </dl>
+  </div>
+  <div class="section-head" style="margin-top:36px"><h2 style="font-size:1.8rem">Ingestion Runs</h2><div class="rule"></div></div>
+  {% include "admin/_runs.html" %}
+</div>
+{% endblock %}

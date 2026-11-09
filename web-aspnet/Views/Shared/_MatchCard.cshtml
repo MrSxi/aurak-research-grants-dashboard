@@ -1,0 +1,40 @@
+@inherits AurakView<Args>
+@{ var m = Model.A; var person = Model.B ?? J.None; string kind = Model.C; bool strong = m.score.Num >= Config["MATCH_STRONG"].Num; }
+<div class="match">
+  <div class="top">
+    <div class="scorebox @(strong ? "" : "possible")"><div><strong>@Score(m.score)</strong><small>match score</small></div></div>
+    <div class="who">
+      @if (person)
+      {
+        <a href="/@(kind == "faculty" ? "faculty" : "students")/@person.id">@person.full_name</a>
+        <div class="muted">@if (kind == "faculty") {<text>@person.title.Or("")@if (person.school) {<text> · @person.school</text>}</text>} else {<text>@("Student")@if (person.major) {<text> · @person.major</text>}@if (person.school) {<text> · @person.school</text>}</text>}</div>
+      }
+      else {<b>@m.person_id</b>}
+      <span class="badge @(strong ? "green" : "")">@MatchLabel(m.score, Config)</span>
+      @if (m.evidence.same_funder) {<span class="badge gold"><i class="fas fa-award"></i> Previously funded by this funder</span>}
+    </div>
+  </div>
+  <details @(m.rank.Num <= 2 ? "open" : "")>
+    <summary>Why this match? (evidence)</summary>
+    <ul class="evidence">
+      @foreach (var (key, label) in ((J)G.COMPONENTS).Items())
+      {
+        var ev = m.evidence.Get(key);
+        if (ev)
+        {
+          <li><span class="comp">@label</span>
+            @if (!ev.score.IsNone) {<span class="sim">component score @Score(ev.score)</span>}
+            @if (ev["items"])
+            {
+              <ul style="margin:4px 0 0 18px;padding:0">
+                @foreach (var it in ev["items"]) {<li style="border:0;padding:1px 0">@if (it.url) {<a href="@it.url" target="_blank" rel="noopener">@it.label</a>} else {<text>@it.label</text>} @if (it.exact) {<span class="badge gold small">exact phrase in grant text</span>} else {<span class="sim">(similarity @Score(it.similarity))</span>}</li>}
+              </ul>
+            }
+            else {<span class="sim"> — no item above the evidence threshold</span>}
+          </li>
+        }
+      }
+      @if (m.evidence.same_funder) {<li><span class="comp">Same funder before</span>@Join(m.evidence.same_funder, "; ")</li>}
+    </ul>
+  </details>
+</div>

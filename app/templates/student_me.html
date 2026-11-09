@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% from "_macros.html" import section_head, status_badge, deadline %}
+{% block title %}My profile · AURAK Research Grants{% endblock %}
+{% block content %}
+<div class="container page-head">
+  <h1>{{ st.full_name }}</h1>
+  <div class="muted">Student{% if st.major %} · {{ st.major }}{% endif %}{% if st.school %} · {{ st.school }}{% endif %} · {{ st.email }}</div>
+  <p class="small muted">Your interests and publications are reviewed by an administrator. Once approved, they are added to the database and used for matching straight away.</p>
+</div>
+
+<div class="container layout-main" style="margin-top:16px">
+  <div>
+    <div class="card">
+      <h3>Research interests</h3>
+      <div class="chips">
+        {% for i in interests %}
+          <span class="chip {{ i.status }}" title="{{ i.reason or '' }}">{{ i.text }} <span class="badge {{ i.status }}">{{ i.status }}</span>
+            <form method="post" action="/me/interests/{{ i.id }}/delete" style="display:inline"><button type="submit" title="Remove">&times;</button></form>
+          </span>
+        {% else %}<p class="missing">No interests yet. Add your first one below.</p>{% endfor %}
+      </div>
+      {% for i in interests if i.status == 'denied' and i.reason %}<p class="small" style="color:var(--primary)">“{{ i.text }}” was denied: {{ i.reason }}</p>{% endfor %}
+      <form method="post" action="/me/interests" data-require-interest="1">
+        {% include "_interest_picker.html" %}
+        <input type="hidden" name="text" id="interests-hidden">
+        <button class="btn" type="submit"><i class="fas fa-plus"></i> Submit interests for approval</button>
+      </form>
+    </div>
+
+    <div class="card" id="publications">
+      <h3>Publications</h3>
+      <p class="small muted">Proof is required: enter a DOI (e.g. <code>10.1109/ACCESS.2026.3683610</code>) or an OpenAlex work ID (<code>W…</code>). The system looks it up in OpenAlex, then Crossref, and fills in the details.</p>
+      <form method="post" action="/me/publications/lookup" class="btn-row">
+        <input type="text" name="identifier" placeholder="DOI or OpenAlex ID" required style="flex:1;min-width:240px">
+        <button class="btn" type="submit"><i class="fas fa-search"></i> Look up</button>
+      </form>
+      {% if lookup %}
+        <div class="card" style="margin-top:14px;border-left:5px solid var(--secondary)">
+          <b>Found in {{ lookup.lookup_source|capitalize }}:</b>
+          <dl class="facts" style="margin-top:8px">
+            <dt>Title</dt><dd>{{ lookup.title|missing }}</dd>
+            <dt>Venue</dt><dd>{{ lookup.venue|missing }}</dd>
+            <dt>Year</dt><dd>{{ lookup.year|missing }}</dd>
+            <dt>Authors</dt><dd>{{ lookup.authors|missing }}</dd>
+            <dt>DOI</dt><dd>{{ lookup.doi|missing }}</dd>
+          </dl>
+          {% if not lookup.name_in_authors %}<div class="warn"><i class="fas fa-exclamation-triangle"></i>Your name was not found in the author list. The administrator will check this before approving.</div>{% endif %}
+          <form method="post" action="/me/publications">
+            <input type="hidden" name="doi" value="{{ lookup.doi or '' }}"><input type="hidden" name="openalex_id" value="{{ lookup.openalex_id or '' }}">
+            <button class="btn green" type="submit"><i class="fas fa-paper-plane"></i> Submit for approval</button>
+          </form>
+        </div>
+      {% endif %}
+      {% if pubs %}
+      <div class="table-wrap" style="margin-top:16px"><table class="data">
+        <tr><th>Status</th><th>Title</th><th>Year</th><th>ID</th></tr>
+        {% for p in pubs %}
+        <tr><td><span class="badge {{ p.status }}">{{ p.status }}</span>{% if p.reason %}<div class="small">{{ p.reason }}</div>{% endif %}</td>
+            <td>{% if p.url %}<a href="{{ p.url }}" target="_blank" rel="noopener">{{ p.title }}</a>{% else %}{{ p.title }}{% endif %}<div class="small muted">{{ p.venue or '' }}</div></td>
+            <td>{{ p.year or '' }}</td><td class="small">{{ p.doi or p.openalex_id }}</td></tr>
+        {% endfor %}
+      </table></div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div>
+    <div class="section-head" style="margin-bottom:14px"><h2 style="font-size:1.8rem">My Matching Grants</h2><div class="rule"></div></div>
+    {% for g, score, ev in matched %}
+      <a class="grant-card" href="/grants/{{ g.id }}">
+        <div>{{ status_badge(g) }} <span class="badge {{ 'gold' if g.scope == 'UAE' else 'dark' }}">{{ g.scope }}</span> <span class="badge green">match score {{ score|score }}</span></div>
+        <h3 style="font-size:1.1rem">{{ g.title }}</h3>
+        <div class="facts"><span><i class="fas fa-landmark"></i> {{ g.funder or 'Funder not published' }}</span><span><i class="far fa-calendar-alt"></i> {{ deadline(g) }}</span></div>
+        {% set why = [] %}{% for k in ['interests','publications','keywords'] %}{% if ev.get(k) and ev[k]['items'] %}{% set _ = why.append(ev[k]['items'][0].label) %}{% endif %}{% endfor %}
+        {% if why %}<div class="snippet small">Evidence: {{ why|join(' · ')|truncate(200) }}</div>{% endif %}
+      </a>
+    {% else %}
+      <div class="note">{% if interests|selectattr('status','equalto','approved')|list or pubs|selectattr('status','equalto','approved')|list %}No open grant matches your approved evidence strongly enough yet.{% else %}Matches appear once an administrator approves at least one interest or publication.{% endif %}</div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}{% include "_interest_picker_js.html" %}{% endblock %}

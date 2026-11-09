@@ -1,0 +1,16 @@
+@{ ViewData["Title"] = "Database · Admin"; var q = M.q; int page = (int)M.page.Num; int pages = (int)M.pages.Num; var cols = ((J)M.cols).ToList(); }
+<div class="container page-head">
+  <div class="section-head"><h2>Database (read-only)</h2><div class="rule"></div></div>
+  <div class="tabs">@foreach (var k in M.tables) {<a href="?table=@k" class="@(k == M.table ? "on" : "")">@k <span class="small muted">@M.counts[k]</span></a>}</div>
+  <form class="btn-row" method="get"><input type="hidden" name="table" value="@M.table"><input type="text" name="q" value="@q" placeholder="Search text columns" style="max-width:360px"><button class="btn ghost" type="submit">Search</button><span class="muted">@M.total rows</span></form>
+</div>
+<div class="container">
+  <div class="table-wrap" style="margin-top:12px"><table class="data">
+    <tr>@foreach (var c in cols) {<th>@c</th>}</tr>
+    @foreach (J r in M.rows)
+    {
+      <tr>@foreach (var c in cols) { var v = r[c.ToString()]; <td class="small">@(v.IsNone ? "" : Truncate(v.ToString(), 140))</td>}</tr>
+    }
+  </table></div>
+  @if (pages > 1) {<div class="pager">@if (page > 1) {<a href="?table=@M.table&q=@q&page=@(page - 1)">&laquo; Prev</a>}<span class="cur">@(page) / @(pages)</span>@if (page < pages) {<a href="?table=@M.table&q=@q&page=@(page + 1)">Next &raquo;</a>}</div>}
+</div>

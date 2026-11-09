@@ -1,0 +1,9 @@
+﻿@inherits AurakView<Args>
+@{
+    var f = Model.A; var size = (string?)Model.B ?? "";
+    string name = f.full_name.ToString();
+    var parts = name.Replace("Dr. ", "").Replace("Prof. ", "").Replace("Mr. ", "").Replace("Ms. ", "").Replace("Engr. ", "")
+        .Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries).Select(p => p.Substring(0, 1)).ToList();
+    var initials = parts.Count == 0 ? "" : (parts.Count == 1 ? parts[0] + parts[0] : parts[0] + parts[^1]);
+}
+<span class="avatar @size">@if (f.image_url && ImageAllowed(f.image_url)) {<img src="@f.image_url" alt="@f.full_name" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">}<span class="initials">@initials</span></span>

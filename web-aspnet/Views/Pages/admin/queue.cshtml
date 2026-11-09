@@ -1,0 +1,86 @@
+@{ ViewData["Title"] = "Approval queue · Admin"; bool showAll = M.show == "all"; }
+<div class="container page-head">
+  <div class="section-head"><h2>Approval Queue</h2><div class="rule"></div></div>
+  <div class="tabs"><a href="?show=pending" class="@(showAll ? "" : "on")">Pending</a><a href="?show=all" class="@(showAll ? "on" : "")">All decisions</a></div>
+  <p class="muted">Student dashboard-access requests, interests and publications. Approving writes them to the database and updates matching immediately. No re-entry needed.</p>
+</div>
+<div class="container">
+  <form method="post" action="/admin/queue/decide" id="queue">
+    @if (!showAll && M.reqs)
+    {
+    <div class="card" style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;background:var(--light-gray)">
+      <label class="check" style="margin:0"><input type="checkbox" id="all" onclick="document.querySelectorAll('input[name=ids]').forEach(c=>c.checked=this.checked)"> Select all</label>
+      <input type="text" name="reason" placeholder="Reason for bulk decision (optional)" style="flex:1;min-width:220px">
+      <button class="btn green" name="action" value="approve" type="submit"><i class="fas fa-check"></i> Approve selected</button>
+      <button class="btn" name="action" value="deny" type="submit"><i class="fas fa-times"></i> Deny selected</button>
+    </div>
+    }
+    <div class="table-wrap" style="margin-top:14px"><table class="data">
+      <tr><th></th><th>Type</th><th>Student</th><th>Submission</th><th>Submitted</th><th>Status / decision</th></tr>
+      @if (M.reqs)
+      {
+        foreach (var r in M.reqs)
+        {
+          var it = M.items.Get(r.id); var st = M.students.Get(r.student_id);
+          string kindClass = r.kind == "publication" ? "gold" : (r.kind == "access" ? "red" : "");
+        <tr>
+          <td>@if (r.status == "pending") {<input type="checkbox" name="ids" value="@r.id">}</td>
+          <td><span class="badge @kindClass">@r.kind</span></td>
+          <td>@if (st) {<text>@st.full_name<div class="small muted">@st.email.Or("")@if (st.major) {<text> · @st.major</text>}</div></text>}</td>
+          <td>
+            @if (it.IsNone) {<span class="missing">Removed by the student</span>}
+            else if (r.kind == "access")
+            {<b>Full dashboard access (Research Assistant)</b>
+              <div class="small">Student ID @it.student_number.Or("not provided")</div>}
+            else if (r.kind == "interest") {<b>@it.text</b>}
+            else
+            {
+              <b>@if (it.url) {<a href="@it.url" target="_blank" rel="noopener">@it.title</a>} else {<text>@it.title</text>}</b>
+              <div class="small">@it.venue.Or("")@if (it.year) {<text> · @it.year</text>} · ID @it.doi.Or(it.openalex_id) · verified via @it.source</div>
+              <div class="small muted">Authors: @(it.authors ? Truncate(it.authors, 220) : "not published")</div>
+              string[] nameParts = st ? st.full_name.ToString().Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries) : new string[0];
+              if (st && it.authors && nameParts.Length > 0 && !it.authors.ToString().ToLowerInvariant().Contains(nameParts[^1].ToLowerInvariant())) {<div class="small" style="color:var(--primary)"><i class="fas fa-exclamation-triangle"></i> Student's surname not found in the author list.</div>}
+            }
+          </td>
+          <td class="nowrap small">@Strf(r.created_at, "%d %b %Y %H:%M")</td>
+          <td>
+            @if (r.status == "pending")
+            {
+              <input type="text" name="@("reason_" + r.id)" placeholder="Reason (optional)" style="margin-bottom:6px">
+              <div class="btn-row" style="gap:6px">
+                <button class="btn sm green" name="action" value="approve:@r.id" type="submit">Approve</button>
+                <button class="btn sm" name="action" value="deny:@r.id" type="submit">Deny</button>
+              </div>
+            }
+            else
+            {
+              <span class="badge @r.status">@r.status</span>@if (r.reason) {<div class="small">@r.reason</div>}
+              if (r.decided_at) {<div class="small muted">@Strf(r.decided_at, "%d %b %H:%M")</div>}
+            }
+          </td>
+        </tr>
+        }
+      }
+      else {<tr><td colspan="6" class="muted">Nothing waiting for approval.</td></tr>}
+    </table></div>
+  </form>
+
+  <div class="section-head" style="margin-top:40px"><h2 style="font-size:1.8rem">Interests Added by Faculty</h2><div class="rule"></div></div>
+  <p class="muted">Faculty add interests to their own profile without approval, and matching uses them straight away. Remove any that are wrong. Matches are recomputed automatically.</p>
+  <div class="table-wrap"><table class="data">
+    <tr><th>Faculty member</th><th>Interest</th><th>Added</th><th></th></tr>
+    @if (M.fac_interests)
+    {
+      foreach (var i in M.fac_interests)
+      {
+    <tr>
+      <td><a href="/faculty/@i.owner_id">@M.fac_names.Get(i.owner_id, i.owner_id)</a></td>
+      <td><b>@i.text</b></td>
+      <td class="nowrap small">@Strf(i.created_at, "%d %b %Y %H:%M")</td>
+      <td><form method="post" action="/admin/interests/@i.id/delete"><button class="btn sm" type="submit"><i class="fas fa-trash-alt"></i> Remove</button></form></td>
+    </tr>
+      }
+    }
+    else {<tr><td colspan="4" class="muted">No faculty-added interests yet.</td></tr>}
+  </table></div>
+</div>

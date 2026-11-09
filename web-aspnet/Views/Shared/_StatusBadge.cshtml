@@ -1,0 +1,4 @@
+﻿@inherits AurakView<Args>
+@{ var g = Model.A; }
+@if (g.status == "unknown") {<span class="badge unknown">Status not published</span>}
+else {<span class="badge @g.status">@Cap(g.status)</span>}

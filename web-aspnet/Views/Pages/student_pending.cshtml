@@ -1,0 +1,38 @@
+@{ ViewData["Title"] = "My profile · AURAK Research Grants"; var st = M.st; var last = M.last; }
+<div class="container">
+  <div class="auth-wrap" style="max-width:720px">
+    <div class="section-head"><h2>My Profile</h2><div class="rule"></div></div>
+    <div class="card">
+      <dl class="facts">
+        <dt>Name</dt><dd><b>@st.full_name</b></dd>
+        <dt>Student ID</dt><dd>@Missing(st.student_number, "Not provided")</dd>
+        <dt>Email</dt><dd>@Missing(st.email)</dd>
+        @if (st.major || st.school) {<dt>Programme</dt><dd>@st.major.Or("")@if (st.major && st.school) {<text> · </text>}@st.school.Or("")</dd>}
+        <dt>Dashboard access</dt><dd>
+          @if (st.access_status == "requested") {<span class="badge pending">requested</span>}
+          else if (st.access_status == "denied") {<span class="badge denied">denied</span>}
+          else {<span class="badge">not requested</span>}
+        </dd>
+      </dl>
+    </div>
+
+    <div class="card">
+      <h3>Full dashboard access</h3>
+      <p>The grants dashboard, researchers, clusters and the assistant are open to approved students (Research Assistants). An administrator reviews each request.</p>
+      @if (st.access_status == "requested")
+      {
+        <div class="note"><i class="far fa-clock"></i> @("Your request was sent")@if (last) {<text> on @Strf(last.created_at, "%d %B %Y")</text>}. You will get full access as soon as an administrator approves it.</div>
+      }
+      else
+      {
+        if (st.access_status == "denied")
+        {
+          <div class="warn"><i class="fas fa-exclamation-triangle"></i>@("Your last request was denied")@if (last && last.reason) {<text>: @last.reason</text>}. You can request again.</div>
+        }
+        <form method="post" action="/me/request-access">
+          <button class="btn lg" type="submit"><i class="fas fa-user-check"></i> Request full access (Research Assistant)</button>
+        </form>
+      }
+    </div>
+  </div>
+</div>

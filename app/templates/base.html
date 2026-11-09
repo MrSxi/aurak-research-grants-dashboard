@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}AURAK Research Grants Dashboard{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Sans:wght@300;400;500;600;700&family=Fira+Sans+Extra+Condensed:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+  <link rel="stylesheet" href="/static/aurak.css">
+</head>
+<body>
+  {# Thin red top bar with gold quick-action buttons (aurak.ac.ae header) #}
+  <div class="topbar">
+    <div class="container">
+      {% if user and limited %}
+        <a class="qa" href="/me"><i class="far fa-user"></i><span class="lbl">My Profile</span></a>
+        <a class="icon-btn" href="/logout" title="Log out ({{ user.name }})"><i class="fas fa-sign-out-alt"></i></a>
+      {% elif user %}
+        <a class="qa" href="/grants"><i class="fas fa-file-signature"></i><span class="lbl">Grants</span></a>
+        {% if user.role != 'admin' %}
+        <a class="qa" href="/notifications"><i class="far fa-bell"></i><span class="lbl">Notifications</span>{% if notif_count %}<span class="count">{{ notif_count }}</span>{% endif %}</a>
+        {% else %}
+        <a class="qa" href="/admin/queue"><i class="fas fa-clipboard-check"></i><span class="lbl">Approvals</span>{% if notif_count %}<span class="count">{{ notif_count }}</span>{% endif %}</a>
+        {% endif %}
+        <a class="qa" href="/chat"><i class="far fa-comments"></i><span class="lbl">Chat</span></a>
+        <a class="qa" href="{{ '/admin' if user.role == 'admin' else '/me' }}"><i class="far fa-user"></i><span class="lbl">{{ 'Admin' if user.role == 'admin' else 'My Profile' }}</span></a>
+        <a class="icon-btn" href="/grants#search" title="Search grants"><i class="fas fa-search"></i></a>
+        <a class="icon-btn" href="/logout" title="Log out ({{ user.name }})"><i class="fas fa-sign-out-alt"></i></a>
+      {% else %}
+        <a class="qa" href="/login"><i class="fas fa-sign-in-alt"></i><span class="lbl">Log in</span></a>
+        <a class="qa" href="/signup"><i class="fas fa-user-plus"></i><span class="lbl">Student sign up</span></a>
+      {% endif %}
+    </div>
+  </div>
+
+  {# White navigation bar: AURAK logo left, menu right #}
+  <nav class="navbar">
+    <div class="container">
+      <a class="brand" href="/">
+        <img src="https://aurak.ac.ae/storage/assets/images/american-university-uae.webp" alt="AURAK — American University of Ras Al Khaimah"
+             onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+        <span class="wordmark">AURAK<small>AMERICAN UNIVERSITY OF RAS AL KHAIMAH</small></span>
+        <span class="product">Research Grants<span>Dashboard</span></span>
+      </a>
+      <button class="menu-toggle" aria-label="Menu" onclick="document.getElementById('menu').classList.toggle('open')"><i class="fas fa-bars"></i></button>
+      <ul class="menu" id="menu">
+        {% for href, label in nav %}
+          <li><a href="{{ href }}" class="{{ 'active' if active == href }}">{{ label }}</a></li>
+        {% endfor %}
+      </ul>
+    </div>
+  </nav>
+
+  {# Red tagline strip #}
+  <div class="tagline">AURAK Research Grants Dashboard: find funding, find collaborators.</div>
+
+  {% block hero %}{% endblock %}
+
+  <main>
+    {% if flash %}
+      <div class="container"><div class="flash {{ flash.kind }}">{{ flash.text }}</div></div>
+    {% endif %}
+    {% block content %}{% endblock %}
+  </main>
+
+  {% if user and not limited and active != '/chat' %}
+    <a class="fab" href="/chat{% if grant is defined and grant %}?grant_id={{ grant.id }}{% endif %}" title="Ask the research assistant"><i class="fas fa-comment-dots"></i></a>
+  {% endif %}
+
+  <footer class="footer">
+    <div class="container">
+      <div><strong>AURAK Research Grants Dashboard</strong><br>Prototype for the American University of Ras Al Khaimah. Grant data comes from each funder's public source; always confirm details on the funder's page before applying.</div>
+      <div class="small">Match scores rank research similarity; they are not probabilities and do not mean a person is available or willing to collaborate.<br>Data refresh every {{ refresh_hours|int }} hours.</div>
+    </div>
+  </footer>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

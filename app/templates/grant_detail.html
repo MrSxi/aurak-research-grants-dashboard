@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% from "_macros.html" import status_badge, deadline, amount, match_card, section_head %}
+{% block title %}{{ grant.title }} · AURAK Research Grants{% endblock %}
+{% block content %}
+<div class="container page-head">
+  <div class="crumbs"><a href="/grants">Grants</a> / {{ grant.funder or 'Funder' }}</div>
+  <div>
+    {{ status_badge(grant) }}
+    <span class="badge {{ 'gold' if grant.scope == 'UAE' else 'dark' }}">{{ 'UAE' if grant.scope == 'UAE' else 'International' }}{% if grant.emirate %} · {{ grant.emirate }}{% endif %}</span>
+    <span class="badge">{{ grant.type|capitalize }}</span>
+    {% if grant.hidden %}<span class="badge dark">Hidden from users</span>{% endif %}
+  </div>
+  <h1 style="margin-top:10px">{{ grant.title }}</h1>
+  <div class="btn-row">
+    {% if grant.apply_url %}<a class="btn lg" href="{{ grant.apply_url }}" target="_blank" rel="noopener">Apply on the funder's site <i class="fas fa-external-link-alt small"></i></a>{% endif %}
+    <a class="btn lg gold" href="/chat?grant_id={{ grant.id }}"><i class="far fa-comments"></i> Ask the assistant about this grant</a>
+    {% if user.role == 'admin' %}
+      <a class="btn ghost" href="/admin/grants/{{ grant.id }}/edit"><i class="fas fa-edit"></i> Edit</a>
+      <form method="post" action="/admin/grants/{{ grant.id }}/hide" style="display:inline"><button class="btn gray" type="submit">{{ 'Unhide' if grant.hidden else 'Hide' }}</button></form>
+    {% endif %}
+  </div>
+</div>
+
+<div class="container layout-main" style="margin-top:24px">
+  <div>
+    {% for w in grant.eligibility_warnings or [] %}<div class="warn"><i class="fas fa-exclamation-triangle"></i>{{ w }}</div>{% endfor %}
+    <div class="card">
+      <h3>Key facts</h3>
+      <dl class="facts">
+        <dt>Funder</dt><dd>{{ grant.funder|missing }}</dd>
+        <dt>Programme</dt><dd>{{ grant.programme|missing }}</dd>
+        <dt>Deadline</dt><dd>{{ deadline(grant) }}{% if grant.deadlines and grant.deadlines|length > 1 %}<div class="small muted">All published deadlines: {{ grant.deadlines|join(', ') }}</div>{% endif %}{% if grant.deadline_text %}<div class="small muted">{{ grant.deadline_text }}</div>{% endif %}</dd>
+        <dt>Opens</dt><dd>{{ (grant.open_date|d)|missing }}</dd>
+        <dt>Amount</dt><dd>{{ amount(grant) }}</dd>
+        <dt>Duration</dt><dd>{{ grant.duration|missing }}</dd>
+        <dt>Country / emirate</dt><dd>{{ grant.country|missing }}{% if grant.emirate %} · {{ grant.emirate }}{% endif %}</dd>
+        <dt>Research areas</dt><dd>{{ (grant.research_areas|join(', '))|missing }}</dd>
+        {% if grant.keywords %}<dt>Keywords</dt><dd>{{ grant.keywords|join(', ') }}</dd>{% endif %}
+        <dt>Contact</dt><dd>{{ grant.contact|missing }}</dd>
+        <dt>Source</dt><dd>{% if grant.source_url %}<a href="{{ grant.source_url }}" target="_blank" rel="noopener">{{ src.name if src else grant.source }}</a>{% else %}{{ src.name if src else grant.source }}{% endif %}<div class="small muted">First seen {{ grant.first_seen.strftime('%d %b %Y') }} · last updated {{ grant.last_checked.strftime('%d %b %Y %H:%M') }} UTC</div></dd>
+      </dl>
+    </div>
+    <div class="card">
+      <h3>Description</h3>
+      {% if grant.description %}<div class="prose">{{ grant.description|truncate(5000) }}</div>{% else %}<p class="missing">Not published by the source.</p>{% endif %}
+    </div>
+    <div class="card">
+      <h3>Eligibility</h3>
+      {% if grant.eligibility_text %}<div class="prose">{{ grant.eligibility_text|truncate(3000) }}</div>{% else %}<p class="missing">Not published in the source data. Check the funder's page.</p>{% endif %}
+      {% if grant.eligibility_flags %}<p class="small muted">Flags: {% for k, v in grant.eligibility_flags.items() if v %}{{ k|replace('_',' ') }}: {{ v if v is string else v|join(', ') }}{% if not loop.last %} · {% endif %}{% endfor %}</p>{% endif %}
+    </div>
+    <div class="card">
+      <h3>Required documents</h3>
+      {% if grant.required_documents %}<div class="prose">{{ grant.required_documents }}</div>{% else %}<p class="missing">Not published in the source data. Check the funder's page.</p>{% endif %}
+    </div>
+  </div>
+
+  <div>
+    {% if gclusters %}
+    <div class="card" style="border-top:4px solid var(--secondary)">
+      <h3><i class="fas fa-project-diagram"></i> Research cluster</h3>
+      {% for c, sim, n_fac, n_schools in gclusters %}
+        <p style="margin:0 0 8px"><a href="/clusters/{{ c.key }}"><b>{{ c.name }}</b></a><br>
+        <span class="small">{{ n_fac }} faculty work in this cluster across {{ n_schools }} school(s).</span></p>
+      {% endfor %}
+      <p class="small muted" style="margin:0">Clusters are proposed by this project; AURAK has no official research clusters. Membership is AI-suggested.</p>
+    </div>
+    {% endif %}
+    <div class="section-head" style="margin:22px 0 14px"><h2 style="font-size:1.8rem">Matched AURAK Faculty</h2><div class="rule"></div></div>
+    {% if fac %}
+      <p class="small muted">Faculty whose research matches this scope, from {{ schools|length }} school(s). A match does not mean the person is available or willing to collaborate.</p>
+      {% for m in fac %}{{ match_card(m, people.get(('faculty', m.person_id)), 'faculty') }}{% endfor %}
+    {% else %}
+      <div class="note">No strong faculty match in the current AURAK dataset for this grant. Nobody's interests, publications or past grants are close enough to its scope, so no match is forced.</div>
+    {% endif %}
+    <div class="section-head" style="margin:28px 0 14px"><h2 style="font-size:1.8rem">Matched Students</h2><div class="rule"></div></div>
+    {% if stu %}
+      {% for m in stu %}{{ match_card(m, people.get(('student', m.person_id)), 'student') }}{% endfor %}
+    {% else %}
+      <div class="note">No student with approved interests or publications matches this grant yet.</div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

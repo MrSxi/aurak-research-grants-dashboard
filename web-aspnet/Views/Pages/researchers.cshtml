@@ -1,0 +1,56 @@
+@{ ViewData["Title"] = "Researchers · AURAK Research Grants"; var q = M.q; var interests = M.interests; }
+@section hero {
+<div class="searchband">
+  <form action="/researchers" method="get" class="container">
+    <i class="fas fa-search"></i>
+    <input type="search" name="q" value="@q" placeholder="Describe a research idea to find AURAK researchers who work on it">
+    <button class="btn" type="submit">Find</button>
+  </form>
+</div>
+}
+<div class="container page-head">
+  <div class="section-head"><h2>@(q ? "Researchers Matching “" + q + "”" : "AURAK Researchers")</h2><div class="rule"></div></div>
+</div>
+<div class="container">
+  @if (!M.ranked.IsNone)
+  {
+    <p class="muted">Faculty first, then students. Match scores rank research similarity. They do not mean a person is available or willing to collaborate.</p>
+    var ranked = ((J)M.ranked).ToList();
+    var ordered = ranked.Where(r => r[0] == "faculty").Concat(ranked.Where(r => r[0] == "student")).ToList();
+    if (ordered.Count == 0) {<div class="note">Nobody in the AURAK dataset works closely on this topic. Try broader words.</div>}
+    foreach (var r in ordered)
+    {
+      string ptype = r[0].ToString(); var pid = r[1]; var score = r[2];
+      J p = ptype == "faculty" ? ((J)M.faculty).Get(pid) : ((J)M.students).Get(pid);
+      <div class="match">
+        <div class="top">
+          @if (ptype == "faculty" && p.Truthy) { @await Html.PartialAsync("_Avatar", new Args(p, "sm")) }
+          <div class="scorebox @(score.Num >= Config["MATCH_STRONG"].Num ? "" : "possible")"><div><strong>@Score(score)</strong><small>match score</small></div></div>
+          <div class="who"><a href="/@(ptype == "faculty" ? "faculty" : "students")/@pid">@(p.Truthy ? p["full_name"] : pid)</a>
+            <div class="muted">@(ptype == "faculty" ? "Faculty" : "Student")@if (p.Truthy && p["school"].Truthy) {<text> · @p["school"]</text>}@if (ptype == "faculty" && p.Truthy && p["department"].Truthy) {<text> · @p["department"]</text>}</div>
+            @if (ptype == "faculty" && interests.Get(pid)) {<div class="small">@Truncate(Join(interests[pid].Slice(0, 5), " · "), 200)</div>}
+          </div>
+        </div>
+      </div>
+    }
+  }
+  else
+  {
+    <form method="get" class="btn-row" style="margin-bottom:18px">
+      <select name="school" onchange="this.form.submit()" style="max-width:360px"><option value="">All schools</option>@foreach (var s in M.schools) {<option @Sel(s == M.school)>@s</option>}</select>
+    </form>
+    <div class="grid-3">
+      @foreach (var f in M.rows)
+      {
+        <a class="card person-card" href="/faculty/@f.id">
+          @await Html.PartialAsync("_Avatar", new Args(f))
+          <div>
+            <h4 style="margin-bottom:4px">@f.full_name</h4>
+            <div class="small muted">@f.department.Or("")</div>
+            <div class="small" style="margin-top:6px">@J.Of(Truncate(Join(interests.Get(f.id).Or(J.Of(new List<J>())).Slice(0, 4), " · "), 150)).Or("")</div>
+          </div>
+        </a>
+      }
+    </div>
+  }
+</div>

@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% from "_macros.html" import grant_card %}
+{% block title %}{{ c.name }} · AURAK Research Clusters{% endblock %}
+{% block content %}
+<div class="container page-head">
+  <div class="crumbs"><a href="/clusters">Research Clusters</a> / {{ c.name }}</div>
+  {% if CLUSTER_IMAGES.get(c.key) %}<div class="photo-banner" style="background-image:linear-gradient(rgba(0,0,0,.05),rgba(0,0,0,.55)),url('{{ CLUSTER_IMAGES[c.key] }}')"><h1>{{ c.name }}</h1></div>{% else %}<h1>{{ c.name }}</h1>{% endif %}
+  <div><span class="badge gold">Proposed cluster (not an official AURAK unit)</span> <span class="badge">AI-suggested membership</span></div>
+  <p style="max-width:1000px;margin-top:12px">{{ c.scope }}</p>
+  <div class="chips">{% for t in c.terms %}<span class="chip">{{ t }}</span>{% endfor %}</div>
+</div>
+<div class="container layout-main" style="margin-top:20px">
+  <div>
+    <div class="section-head" style="margin-bottom:14px"><h2 style="font-size:1.8rem">Open Grants for This Cluster</h2><div class="rule"></div></div>
+    {% for g, sim in grants %}{{ grant_card(g, source_names) }}{% else %}<div class="note">No open grant is close to this cluster's scope right now.</div>{% endfor %}
+  </div>
+  <div>
+    <div class="section-head" style="margin-bottom:14px"><h2 style="font-size:1.8rem">Members</h2><div class="rule"></div></div>
+    <p class="small muted">{{ c.members|length }} people across {{ c.schools|length }} school(s). <b>Bold</b> = this is their main cluster. Faculty first, then students.</p>
+    <div class="card">
+      {% for person, meta, sim, primary in c.members %}
+        <div style="padding:6px 0;border-bottom:1px solid var(--gray)">
+          <a href="/{{ 'faculty' if person[0] == 'faculty' else 'students' }}/{{ person[1] }}">{% if primary %}<b>{{ meta.name }}</b>{% else %}{{ meta.name }}{% endif %}</a>
+          <span class="small muted">· {{ 'Faculty' if person[0] == 'faculty' else 'Student' }}{% if meta.department %} · {{ meta.department }}{% endif %}</span>
+          <span class="small muted" style="float:right">fit {{ sim|score }}</span>
+        </div>
+      {% else %}<p class="muted">No members yet.</p>{% endfor %}
+    </div>
+    <a class="btn gold" style="margin-top:16px" href="/chat?q={{ ('Suggest a team from the ' ~ c.name ~ ' cluster for an open grant')|urlencode }}"><i class="far fa-comments"></i> Ask the assistant to form a team</a>
+  </div>
+</div>
+{% endblock %}

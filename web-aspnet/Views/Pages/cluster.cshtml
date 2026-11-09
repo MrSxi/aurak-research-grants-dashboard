@@ -1,0 +1,34 @@
+@{ var c = M.c; ViewData["Title"] = c.name + " · AURAK Research Clusters"; var images = (J)G.CLUSTER_IMAGES; }
+<div class="container page-head">
+  <div class="crumbs"><a href="/clusters">Research Clusters</a> / @c.name</div>
+  @if (images.Get(c.key)) {<div class="photo-banner" style="background-image:linear-gradient(rgba(0,0,0,.05),rgba(0,0,0,.55)),url('@images[c.key]')"><h1>@c.name</h1></div>} else {<h1>@c.name</h1>}
+  <div><span class="badge gold">Proposed cluster (not an official AURAK unit)</span> <span class="badge">AI-suggested membership</span></div>
+  <p style="max-width:1000px;margin-top:12px">@c.scope</p>
+  <div class="chips">@foreach (var t in c.terms) {<span class="chip">@t</span>}</div>
+</div>
+<div class="container layout-main" style="margin-top:20px">
+  <div>
+    <div class="section-head" style="margin-bottom:14px"><h2 style="font-size:1.8rem">Open Grants for This Cluster</h2><div class="rule"></div></div>
+    @if (M.grants) { foreach (var gs in M.grants) { @await Html.PartialAsync("_GrantCard", new Args(gs[0], M.source_names)) } } else {<div class="note">No open grant is close to this cluster's scope right now.</div>}
+  </div>
+  <div>
+    <div class="section-head" style="margin-bottom:14px"><h2 style="font-size:1.8rem">Members</h2><div class="rule"></div></div>
+    <p class="small muted">@c.members.Count people across @c.schools.Count school(s). <b>Bold</b> = this is their main cluster. Faculty first, then students.</p>
+    <div class="card">
+      @if (c.members)
+      {
+        foreach (var mem in c.members)
+        {
+          var person = mem[0]; var meta = mem[1]; bool isFac = person[0] == "faculty";
+        <div style="padding:6px 0;border-bottom:1px solid var(--gray)">
+          <a href="/@(isFac ? "faculty" : "students")/@person[1]">@if (mem[3]) {<b>@meta.name</b>} else {<text>@meta.name</text>}</a>
+          <span class="small muted">· @(isFac ? "Faculty" : "Student")@if (meta.department) {<text> · @meta.department</text>}</span>
+          <span class="small muted" style="float:right">fit @Score(mem[2])</span>
+        </div>
+        }
+      }
+      else {<p class="muted">No members yet.</p>}
+    </div>
+    <a class="btn gold" style="margin-top:16px" href="/chat?q=@UrlEncode("Suggest a team from the " + c.name + " cluster for an open grant")"><i class="far fa-comments"></i> Ask the assistant to form a team</a>
+  </div>
+</div>

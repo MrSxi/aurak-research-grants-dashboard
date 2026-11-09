@@ -1,0 +1,18 @@
+@inherits AurakView<Args>
+@{ var g = Model.A; var sourceNames = Model.B ?? J.None; }
+<a class="grant-card" href="/grants/@g.id">
+  <div>
+    @await Html.PartialAsync("_StatusBadge", new Args(g))
+    <span class="badge @(g.scope == "UAE" ? "gold" : "dark")">@(g.scope == "UAE" ? "UAE" : "International")@if (g.emirate) {<text> · @g.emirate</text>}</span>
+    <span class="badge">@Cap(g.type)</span>
+    @if (g.eligibility_warnings) {<span class="badge red" title="@Join(g.eligibility_warnings, " ")"><i class="fas fa-exclamation-triangle"></i> Eligibility check</span>}
+    @if (g.hidden) {<span class="badge dark">Hidden</span>}
+  </div>
+  <h3>@g.title</h3>
+  <div class="facts">
+    <span><i class="fas fa-landmark"></i> @g.funder.Or("Funder not published")</span>
+    <span><i class="far fa-calendar-alt"></i> Deadline: @await Html.PartialAsync("_Deadline", new Args(g))</span>
+    <span><i class="fas fa-coins"></i> @await Html.PartialAsync("_Amount", new Args(g))</span>
+  </div>
+  <div class="small muted" style="margin-top:6px">Source: @sourceNames.Get(g.source, g.source) · last updated @Strf(g.last_checked, "%d %b %Y %H:%M") UTC</div>
+</a>

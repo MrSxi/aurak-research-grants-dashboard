@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+{% from "_macros.html" import section_head, deadline, amount, status_badge %}
+{% block hero %}
+<section class="hero has-img" style="--fimg:url('{{ PAGE_IMAGES.hero }}')">
+  <div class="inner">
+    <h1>Find Research Funding</h1>
+    <p>{{ stats.active }} open and upcoming grants, fellowships and scholarships from {{ stats.funders }} UAE and international funders, matched to AURAK researchers across all three schools.</p>
+    <a class="btn lg" href="/grants">Browse All Grants</a>
+  </div>
+</section>
+<div class="searchband">
+  <form action="/grants" method="get" class="container">
+    <i class="fas fa-search"></i>
+    <label for="hq" class="sr-only">Search grants</label>
+    <input id="hq" type="search" name="q" placeholder="Search grants, fellowships and scholarships (e.g. machine learning, sustainability)">
+    <input type="hidden" name="mode" value="meaning">
+    <button class="btn" type="submit">Search</button>
+  </form>
+</div>
+{% endblock %}
+
+{% block content %}
+<section class="section intro">
+  <div class="container">
+    <h1>AURAK Research Grants Dashboard</h1>
+    <div class="lead">Welcome, {{ user.name }}{% if user.role == 'faculty' %} · Faculty view{% else %} · Student view{% endif %}</div>
+    <p>Every available research grant, fellowship and scholarship in one place: national (UAE) and international. Open a grant to see its deadline, amount, eligibility and Apply link, and the AURAK faculty and students whose research matches it, with the evidence behind each match.</p>
+    <div class="btn-row" style="margin-top:22px">
+      <a class="btn lg" href="{{ '/notifications' if user.role == 'faculty' else '/me' }}">{{ 'My Notifications' if user.role == 'faculty' else 'My Interests & Publications' }}</a>
+      <a class="btn lg" href="/chat">Ask the Assistant</a>
+    </div>
+  </div>
+</section>
+
+<section class="section tight">
+  <div class="container">
+    {{ section_head('Opportunities', '/grants') }}
+    <div class="feature-grid">
+      <a class="feature fbg-red has-img" style="--fimg:url('{{ PAGE_IMAGES.uae }}')" href="/grants?scope=UAE"><span class="big">{{ stats.uae }}</span><div class="ft"><strong>UAE Grants</strong><span>National funders, incl. Ras Al Khaimah</span></div></a>
+      <a class="feature fbg-dark has-img" style="--fimg:url('{{ PAGE_IMAGES.international }}')" href="/grants?scope=international"><span class="big">{{ stats.intl }}</span><div class="ft"><strong>International Grants</strong><span>Grants.gov, EU Funding &amp; Tenders</span></div></a>
+      <a class="feature fbg-gold has-img" style="--fimg:url('{{ PAGE_IMAGES.closing }}')" href="/grants?deadline_days=30&status=open"><span class="big">{{ stats.closing }}</span><div class="ft"><strong>Closing in 30 Days</strong><span>Deadlines coming up soon</span></div></a>
+    </div>
+  </div>
+</section>
+
+<section class="band">
+  <div class="container">
+    <div>
+      <h2>Grants That Match<br>Your Research</h2>
+      {% if mine %}
+        <p>These open calls are closest to your {{ 'interests, publications, topics and past grants' if user.role == 'faculty' else 'approved interests and publications' }}. Every match score comes with its evidence.</p>
+        <a class="btn gold" href="/me">See all my matches</a>
+      {% elif user.role == 'student' %}
+        <p>Add your research interests and publications. Once an administrator approves them, the dashboard matches you to grants and shows you next to the faculty working on them.</p>
+        <a class="btn gold" href="/me">Add interests</a>
+      {% else %}
+        <p>{{ 'The match index is still being built. Refresh this page in a minute.' if not index_ready else 'No open grant matches your profile strongly enough yet. New grants are checked every refresh.' }}</p>
+      {% endif %}
+    </div>
+    <div class="band-cards">
+      {% for g, score in mine %}
+        <div class="band-card">
+          <div class="img">
+            <div class="score">{{ score|score }}</div>
+            <div class="meta">match score · {{ g.funder or 'Funder not published' }}</div>
+            <div class="meta">Deadline: {{ g.deadline|d if g.deadline else 'Not published' }}</div>
+            <a class="btn gold sm" href="/grants/{{ g.id }}">View Details</a>
+          </div>
+          <h3>{{ g.title|truncate(70) }}</h3>
+        </div>
+      {% else %}
+        {% for title, href, text in [('Find Grants','/grants','Search every open call'),('Find Researchers','/researchers','Faculty across all schools'),('Research Clusters','/clusters','Proposed AURAK research clusters')] %}
+        <div class="band-card"><div class="img"><div class="score"><i class="fas {{ ['fa-search-dollar','fa-users','fa-project-diagram'][loop.index0] }}"></i></div><div class="meta">{{ text }}</div><a class="btn gold sm" href="{{ href }}">View Details</a></div><h3>{{ title }}</h3></div>
+        {% endfor %}
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="section gray">
+  <div class="container">
+    {{ section_head('Recently Added Grants', '/grants?sort=newest') }}
+    {% if newest %}
+    <div class="news">
+      {% set lead = newest[0] %}
+      <div class="news-lead">
+        <div class="img" style="--fbg: linear-gradient(rgba(0,0,0,.1),rgba(0,0,0,.72)), url('{{ grant_image(lead.id) }}') center/cover"><span class="funder">{{ lead.funder or 'Funder not published' }}</span></div>
+        <div class="news-date">Added {{ lead.first_seen.strftime('%d %B %Y') }} · {{ status_badge(lead) }}</div>
+        <h3><a href="/grants/{{ lead.id }}">{{ lead.title }}</a></h3>
+        <p class="clamp">{{ (lead.description or '')|truncate(260) }}</p>
+        <a class="btn" href="/grants/{{ lead.id }}">More Details</a>
+      </div>
+      <div class="news-list">
+        {% for g in newest[1:] %}
+        <div class="news-item">
+          <div class="img" style="--fbg: linear-gradient(rgba(0,0,0,.1),rgba(0,0,0,.72)), url('{{ grant_image(g.id) }}') center/cover">{{ g.funder|truncate(48) if g.funder else 'Funder not published' }}</div>
+          <div>
+            <div class="news-date">Deadline: {{ deadline(g) }}</div>
+            <h3><a href="/grants/{{ g.id }}">{{ g.title|truncate(90) }}</a></h3>
+            <p class="clamp">{{ (g.description or '')|truncate(150) }}</p>
+            <a class="btn" href="/grants/{{ g.id }}">More Details</a>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% else %}<p class="muted">No grants yet. An administrator can run "Refresh now" in Source Health.</p>{% endif %}
+  </div>
+</section>
+
+<section class="section gray" style="padding-top:0">
+  <div class="container">
+    {{ section_head('Closing Soon', '/grants?status=open&sort=deadline') }}
+    <div class="events">
+      {% for g in closing %}
+      <div class="event">
+        <div class="img" style="--fbg: linear-gradient(rgba(0,0,0,.55),rgba(0,0,0,.1) 45%,rgba(0,0,0,.2)), url('{{ grant_image(g.id + 3) }}') center/cover">
+          <div class="title-on">{{ g.funder or 'Funder not published' }}</div>
+          <div class="caption">
+            <div><b>Scope :</b> {{ 'UAE' if g.scope == 'UAE' else 'International' }}{% if g.country %} · {{ g.country }}{% endif %}</div>
+            <div class="right"><b>Deadline :</b> {{ g.deadline|d }}<br><b>Amount :</b> {{ amount(g) }}</div>
+          </div>
+        </div>
+        <h3>{{ g.title|truncate(90) }}</h3>
+        <p class="clamp">{{ (g.description or '')|truncate(220) }}</p>
+        <a class="btn" href="/grants/{{ g.id }}">More Details</a>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,33 @@
+@{ ViewData["Title"] = "Grants management · Admin"; var args = M.args; int page = (int)M.page.Num; int pages = (int)M.pages.Num; }
+<div class="container page-head">
+  <div class="section-head"><h2>Grants Management</h2><div class="rule"></div></div>
+  <div class="btn-row">
+    <form method="post" action="/admin/refresh" style="display:inline"><button class="btn gold" type="submit"><i class="fas fa-sync-alt"></i> Refresh now</button></form>
+    <form method="get" class="btn-row" style="flex:1">
+      <input type="text" name="q" value="@args.q.Or("")" placeholder="Search title, funder…" style="max-width:320px">
+      <select name="status" style="max-width:200px">@foreach (var (v, l) in new[] { ("all", "All statuses"), ("active", "Open & forthcoming"), ("open", "Open"), ("forthcoming", "Forthcoming"), ("unknown", "Status not published"), ("closed", "Closed") }) {<option value="@v" @Sel(args.status == v)>@l</option>}</select>
+      <select name="source" style="max-width:220px"><option value="">All sources</option>@foreach (var k in new[] { "manual", "grants_gov", "eu_ft", "alqasimi", "aljalila", "dubai_rdi" }) {<option @Sel(args.source == k)>@k</option>}</select>
+      <label class="check" style="margin:0"><input type="checkbox" name="hidden_only" value="1" @Chk(args.hidden_only)> Hidden only</label>
+      <button class="btn ghost" type="submit">Filter</button>
+    </form>
+  </div>
+  <p class="muted" style="margin-top:12px">@M.total grants. Edits mark a grant as manually maintained, so scheduled refreshes will not overwrite them.</p>
+</div>
+<div class="container">
+  <div class="table-wrap"><table class="data">
+    <tr><th>Title</th><th>Source</th><th>Status</th><th>Deadline</th><th>Last checked</th><th></th></tr>
+    @foreach (var g in M.rows)
+    {
+    <tr>
+      <td><a href="/grants/@g.id">@Truncate(g.title, 110)</a><div class="small muted">@g.funder.Or("")</div></td>
+      <td class="small">@(g.source)@if (g.manual) {<text> <span class="badge gold">manual</span></text>}</td>
+      <td>@await Html.PartialAsync("_StatusBadge", new Args(g))@if (g.hidden) {<text> <span class="badge dark">hidden</span></text>}</td>
+      <td class="small nowrap">@await Html.PartialAsync("_Deadline", new Args(g))</td>
+      <td class="small nowrap">@Strf(g.last_checked, "%d %b %H:%M")</td>
+      <td class="nowrap"><a class="btn sm ghost" href="/admin/grants/@g.id/edit">Edit</a>
+        <form method="post" action="/admin/grants/@g.id/hide" style="display:inline"><button class="btn sm gray" type="submit">@(g.hidden ? "Unhide" : "Hide")</button></form></td>
+    </tr>
+    }
+  </table></div>
+  @if (pages > 1) {<div class="pager">@if (page > 1) {<a href="?@M.qs&page=@(page - 1)">&laquo; Prev</a>}<span class="cur">@(page) / @(pages)</span>@if (page < pages) {<a href="?@M.qs&page=@(page + 1)">Next &raquo;</a>}</div>}
+</div>

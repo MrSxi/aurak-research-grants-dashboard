@@ -1,0 +1,23 @@
+@{ ViewData["Title"] = "Research Clusters · AURAK Research Grants"; var images = (J)G.CLUSTER_IMAGES; }
+<section class="section intro" style="padding-bottom:20px">
+  <div class="container">
+    <h1>AURAK Research Clusters</h1>
+    <div class="lead">Proposed by this project · membership is AI-suggested</div>
+    <p>AURAK has no official research clusters, so this dashboard proposes ten, drawn from the departments and research interests of faculty across all three schools. Each person joins the cluster(s) closest to their interests, publications and past grants. Membership is recomputed whenever the data changes, so nothing is assigned by hand. Use a cluster to form a team for a grant.</p>
+  </div>
+</section>
+<section class="section tight">
+  <div class="container">
+    <div class="feature-grid">
+      @foreach (var c in M.groups)
+      {
+        int schools = c.schools.Count; int students = c.students.Count;
+        <a class="feature @(c.color + (images.Get(c.key) ? " has-img" : ""))" href="/clusters/@c.key" style="min-height:250px;--fimg:url('@images.Get(c.key, "")')">
+          <span class="big" style="font-size:2.6rem">@c.faculty.Count<span style="font-size:1rem"> faculty</span></span>
+          <div class="ft"><strong style="font-size:1.7rem">@c.name</strong>
+            <span>@schools @("school" + Plural(schools)) · @students @("student" + Plural(students)) · @c.grants related grants</span></div>
+        </a>
+      }
+    </div>
+  </div>
+</section>

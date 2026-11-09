@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Student sign up · AURAK Research Grants Dashboard{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="auth-wrap" style="max-width:720px">
+    <div class="section-head"><h2>Student Sign Up</h2><div class="rule"></div></div>
+    <form class="card" method="post" action="/signup" id="signup">
+      <div class="grid-2">
+        <div><label for="name">Full name</label><input id="name" name="name" required></div>
+        <div><label for="email">AURAK email</label><input id="email" type="email" name="email" required></div>
+        <div><label for="student_number">AURAK student ID</label><input id="student_number" name="student_number" inputmode="numeric" pattern="[0-9]{6,12}" placeholder="e.g. {{ config.STUDENT_ID_EXAMPLE }}" required></div>
+        <div><label for="school">School</label>
+          <select id="school" name="school"><option value="">Select…</option>{% for s in schools %}<option>{{ s }}</option>{% endfor %}</select></div>
+        <div><label for="major">Major</label><input id="major" name="major" placeholder="e.g. Computer Science"></div>
+      </div>
+      <label for="password">Password</label><input id="password" type="password" name="password" minlength="6" required>
+      {% include "_interest_picker.html" %}
+      <input type="hidden" name="interests" id="interests-hidden">
+      <p class="small muted">After signing up, request full dashboard access from your profile. An administrator approves Research Assistant access, and reviews your interests before they are used for matching.</p>
+      <button class="btn lg" type="submit">Create account</button>
+    </form>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}{% include "_interest_picker_js.html" %}{% endblock %}

@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Add publication · Admin{% endblock %}
+{% block content %}
+<div class="container page-head">
+  <div class="section-head"><h2>Add a Publication</h2><div class="rule"></div></div>
+  <p class="muted">For a faculty member or student whose paper was not picked up automatically. Look it up by DOI/OpenAlex ID to pre-fill the details, or enter them by hand from the official record.</p>
+</div>
+<div class="container grid-2">
+  <div>
+    <form class="card" method="post" action="/admin/publications/lookup">
+      <h3>1. Look up by ID (recommended)</h3>
+      {% set owner_sel = lookup.owner if lookup else '' %}
+      <label for="owner1">Owner</label>
+      <select id="owner1" name="owner" required>{% include "admin/_owner_options.html" %}</select>
+      <label for="identifier">DOI or OpenAlex work ID</label>
+      <input id="identifier" name="identifier" required placeholder="10.xxxx/… or W…">
+      <button class="btn" type="submit" style="margin-top:12px"><i class="fas fa-search"></i> Look up</button>
+    </form>
+    {% if recent %}
+    <div class="card"><h3>Recently added manually</h3>
+      {% for p in recent %}<p class="small" style="margin:0 0 6px">{{ p.title }} <span class="muted">({{ p.owner_type }} {{ p.owner_id }})</span></p>{% endfor %}
+    </div>
+    {% endif %}
+  </div>
+  <form class="card" method="post" action="/admin/publications">
+    <h3>2. Confirm details</h3>
+    {% set owner_sel = lookup.owner if lookup else '' %}
+    <label for="owner2">Owner</label>
+    <select id="owner2" name="owner" required>{% include "admin/_owner_options.html" %}</select>
+    <label for="title">Title</label><input id="title" name="title" required value="{{ lookup.title if lookup else '' }}">
+    <div class="grid-2">
+      <div><label for="doi">DOI</label><input id="doi" name="doi" value="{{ lookup.doi or '' if lookup else '' }}"></div>
+      <div><label for="oa">OpenAlex ID</label><input id="oa" name="openalex_id" value="{{ lookup.openalex_id or '' if lookup else '' }}"></div>
+      <div><label for="venue">Venue</label><input id="venue" name="venue" value="{{ lookup.venue or '' if lookup else '' }}"></div>
+      <div><label for="year">Year</label><input id="year" name="year" value="{{ lookup.year or '' if lookup else '' }}"></div>
+    </div>
+    <label for="authors">Authors</label><input id="authors" name="authors" value="{{ lookup.authors or '' if lookup else '' }}">
+    <label for="url">URL</label><input id="url" name="url" value="{{ lookup.url or '' if lookup else '' }}">
+    <label for="abstract">Abstract</label><textarea id="abstract" name="abstract">{{ lookup.abstract or '' if lookup else '' }}</textarea>
+    <button class="btn green" type="submit" style="margin-top:12px"><i class="fas fa-plus"></i> Add to database</button>
+  </form>
+</div>
+{% endblock %}

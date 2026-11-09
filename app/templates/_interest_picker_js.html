@@ -1,0 +1,64 @@
+<script>
+// LinkedIn-style interest picker: suggestions come from faculty interests and OpenAlex topics in the database.
+(function () {
+  const input = document.getElementById('interest-input');
+  const list = document.getElementById('interest-suggest');
+  const chips = document.getElementById('interest-chips');
+  const hidden = document.getElementById('interests-hidden');
+  if (!input) return;
+  const picked = [];
+  let timer = null, active = -1;
+  function render() {
+    chips.innerHTML = '';
+    picked.forEach((t, i) => {
+      const c = document.createElement('span');
+      c.className = 'chip pending';
+      c.textContent = t + ' ';
+      const b = document.createElement('button');
+      b.type = 'button'; b.innerHTML = '&times;'; b.title = 'Remove';
+      b.onclick = () => { picked.splice(i, 1); render(); };
+      c.appendChild(b); chips.appendChild(c);
+    });
+    hidden.value = picked.join('|');
+  }
+  function add(t) {
+    t = t.trim();
+    if (t && !picked.some(p => p.toLowerCase() === t.toLowerCase())) picked.push(t);
+    input.value = ''; list.style.display = 'none'; render();
+  }
+  input.addEventListener('input', () => {
+    clearTimeout(timer);
+    const q = input.value.trim();
+    if (q.length < 2) { list.style.display = 'none'; return; }
+    timer = setTimeout(async () => {
+      try {
+        const r = await fetch('/api/interest-suggestions?q=' + encodeURIComponent(q));
+        const items = r.ok ? await r.json() : [];
+        list.innerHTML = ''; active = -1;
+        items.forEach(t => { const d = document.createElement('div'); d.textContent = t; d.onmousedown = e => { e.preventDefault(); add(t); }; list.appendChild(d); });
+        const own = document.createElement('div'); own.innerHTML = '<i>Add “' + q.replace(/</g, '&lt;') + '”</i>'; own.onmousedown = e => { e.preventDefault(); add(q); };
+        list.appendChild(own);
+        list.style.display = 'block';
+      } catch (e) { list.style.display = 'none'; }
+    }, 180);
+  });
+  input.addEventListener('keydown', e => {
+    const opts = list.querySelectorAll('div');
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      active = (active + (e.key === 'ArrowDown' ? 1 : -1) + opts.length) % opts.length;
+      opts.forEach((o, i) => o.classList.toggle('on', i === active));
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (active >= 0 && opts[active]) opts[active].dispatchEvent(new Event('mousedown'));
+      else add(input.value);
+    }
+  });
+  input.addEventListener('blur', () => setTimeout(() => list.style.display = 'none', 150));
+  const form = input.closest('form');
+  form.addEventListener('submit', e => {
+    if (input.value.trim()) add(input.value);
+    if (form.dataset.requireInterest && !picked.length) { e.preventDefault(); input.focus(); }
+  });
+})();
+</script>

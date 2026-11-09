@@ -1,0 +1,147 @@
+@{ var stats = M.stats; var user = M.user; bool faculty = user.role == "faculty"; }
+@section hero {
+<section class="hero has-img" style="--fimg:url('@G.PAGE_IMAGES.hero')">
+  <div class="inner">
+    <h1>Find Research Funding</h1>
+    <p>@stats.active open and upcoming grants, fellowships and scholarships from @stats.funders UAE and international funders, matched to AURAK researchers across all three schools.</p>
+    <a class="btn lg" href="/grants">Browse All Grants</a>
+  </div>
+</section>
+<div class="searchband">
+  <form action="/grants" method="get" class="container">
+    <i class="fas fa-search"></i>
+    <label for="hq" class="sr-only">Search grants</label>
+    <input id="hq" type="search" name="q" placeholder="Search grants, fellowships and scholarships (e.g. machine learning, sustainability)">
+    <input type="hidden" name="mode" value="meaning">
+    <button class="btn" type="submit">Search</button>
+  </form>
+</div>
+}
+
+<section class="section intro">
+  <div class="container">
+    <h1>AURAK Research Grants Dashboard</h1>
+    <div class="lead">Welcome, @(user.name + (faculty ? " · Faculty view" : " · Student view"))</div>
+    <p>Every available research grant, fellowship and scholarship in one place: national (UAE) and international. Open a grant to see its deadline, amount, eligibility and Apply link, and the AURAK faculty and students whose research matches it, with the evidence behind each match.</p>
+    <div class="btn-row" style="margin-top:22px">
+      <a class="btn lg" href="@(faculty ? "/notifications" : "/me")">@(faculty ? "My Notifications" : "My Interests & Publications")</a>
+      <a class="btn lg" href="/chat">Ask the Assistant</a>
+    </div>
+  </div>
+</section>
+
+<section class="section tight">
+  <div class="container">
+    @await Html.PartialAsync("_SectionHead", new Args("Opportunities", "/grants"))
+    <div class="feature-grid">
+      <a class="feature fbg-red has-img" style="--fimg:url('@G.PAGE_IMAGES.uae')" href="/grants?scope=UAE"><span class="big">@stats.uae</span><div class="ft"><strong>UAE Grants</strong><span>National funders, incl. Ras Al Khaimah</span></div></a>
+      <a class="feature fbg-dark has-img" style="--fimg:url('@G.PAGE_IMAGES.international')" href="/grants?scope=international"><span class="big">@stats.intl</span><div class="ft"><strong>International Grants</strong><span>Grants.gov, EU Funding &amp; Tenders</span></div></a>
+      <a class="feature fbg-gold has-img" style="--fimg:url('@G.PAGE_IMAGES.closing')" href="/grants?deadline_days=30&status=open"><span class="big">@stats.closing</span><div class="ft"><strong>Closing in 30 Days</strong><span>Deadlines coming up soon</span></div></a>
+    </div>
+  </div>
+</section>
+
+<section class="band">
+  <div class="container">
+    <div>
+      <h2>Grants That Match<br>Your Research</h2>
+      @if (M.mine)
+      {
+        <p>These open calls are closest to your @(faculty ? "interests, publications, topics and past grants" : "approved interests and publications"). Every match score comes with its evidence.</p>
+        <a class="btn gold" href="/me">See all my matches</a>
+      }
+      else if (user.role == "student")
+      {
+        <p>Add your research interests and publications. Once an administrator approves them, the dashboard matches you to grants and shows you next to the faculty working on them.</p>
+        <a class="btn gold" href="/me">Add interests</a>
+      }
+      else
+      {
+        <p>@(!M.index_ready ? "The match index is still being built. Refresh this page in a minute." : "No open grant matches your profile strongly enough yet. New grants are checked every refresh.")</p>
+      }
+    </div>
+    <div class="band-cards">
+      @if (M.mine)
+      {
+        foreach (var pair in M.mine)
+        {
+          var g = pair[0]; var score = pair[1];
+        <div class="band-card">
+          <div class="img">
+            <div class="score">@Score(score)</div>
+            <div class="meta">match score · @g.funder.Or("Funder not published")</div>
+            <div class="meta">Deadline: @(g.deadline ? D(g.deadline) : "Not published")</div>
+            <a class="btn gold sm" href="/grants/@g.id">View Details</a>
+          </div>
+          <h3>@Truncate(g.title, 70)</h3>
+        </div>
+        }
+      }
+      else
+      {
+        var cards = new[] { ("Find Grants", "/grants", "Search every open call", "fa-search-dollar"), ("Find Researchers", "/researchers", "Faculty across all schools", "fa-users"), ("Research Clusters", "/clusters", "Proposed AURAK research clusters", "fa-project-diagram") };
+        foreach (var (title, href, text, icon) in cards)
+        {
+        <div class="band-card"><div class="img"><div class="score"><i class="fas @icon"></i></div><div class="meta">@text</div><a class="btn gold sm" href="@href">View Details</a></div><h3>@title</h3></div>
+        }
+      }
+    </div>
+  </div>
+</section>
+
+<section class="section gray">
+  <div class="container">
+    @await Html.PartialAsync("_SectionHead", new Args("Recently Added Grants", "/grants?sort=newest"))
+    @if (M.newest)
+    {
+      var lead = M.newest[0];
+    <div class="news">
+      <div class="news-lead">
+        <div class="img" style="--fbg: linear-gradient(rgba(0,0,0,.1),rgba(0,0,0,.72)), url('@GrantImage(lead.id)') center/cover"><span class="funder">@lead.funder.Or("Funder not published")</span></div>
+        <div class="news-date">Added @Strf(lead.first_seen, "%d %B %Y") · @await Html.PartialAsync("_StatusBadge", new Args(lead))</div>
+        <h3><a href="/grants/@lead.id">@lead.title</a></h3>
+        <p class="clamp">@Truncate(lead.description.Or(""), 260)</p>
+        <a class="btn" href="/grants/@lead.id">More Details</a>
+      </div>
+      <div class="news-list">
+        @foreach (var g in M.newest.Slice(1))
+        {
+        <div class="news-item">
+          <div class="img" style="--fbg: linear-gradient(rgba(0,0,0,.1),rgba(0,0,0,.72)), url('@GrantImage(g.id)') center/cover">@(g.funder ? Truncate(g.funder, 48) : "Funder not published")</div>
+          <div>
+            <div class="news-date">Deadline: @await Html.PartialAsync("_Deadline", new Args(g))</div>
+            <h3><a href="/grants/@g.id">@Truncate(g.title, 90)</a></h3>
+            <p class="clamp">@Truncate(g.description.Or(""), 150)</p>
+            <a class="btn" href="/grants/@g.id">More Details</a>
+          </div>
+        </div>
+        }
+      </div>
+    </div>
+    }
+    else {<p class="muted">No grants yet. An administrator can run "Refresh now" in Source Health.</p>}
+  </div>
+</section>
+
+<section class="section gray" style="padding-top:0">
+  <div class="container">
+    @await Html.PartialAsync("_SectionHead", new Args("Closing Soon", "/grants?status=open&sort=deadline"))
+    <div class="events">
+      @foreach (var g in M.closing)
+      {
+      <div class="event">
+        <div class="img" style="--fbg: linear-gradient(rgba(0,0,0,.55),rgba(0,0,0,.1) 45%,rgba(0,0,0,.2)), url('@GrantImage(g.id + 3)') center/cover">
+          <div class="title-on">@g.funder.Or("Funder not published")</div>
+          <div class="caption">
+            <div><b>Scope :</b> @(g.scope == "UAE" ? "UAE" : "International")@if (g.country) {<text> · @g.country</text>}</div>
+            <div class="right"><b>Deadline :</b> @D(g.deadline)<br><b>Amount :</b> @await Html.PartialAsync("_Amount", new Args(g))</div>
+          </div>
+        </div>
+        <h3>@Truncate(g.title, 90)</h3>
+        <p class="clamp">@Truncate(g.description.Or(""), 220)</p>
+        <a class="btn" href="/grants/@g.id">More Details</a>
+      </div>
+      }
+    </div>
+  </div>
+</section>

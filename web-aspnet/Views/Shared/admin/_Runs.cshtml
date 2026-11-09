@@ -1,0 +1,13 @@
+<div class="table-wrap"><table class="data">
+  <tr><th>Source</th><th>Trigger</th><th>Started (UTC)</th><th>Status</th><th>New</th><th>Updated</th><th>Error</th></tr>
+  @if (M.runs)
+  {
+    foreach (var r in M.runs)
+    {
+  <tr><td>@r.source_key</td><td>@r.trigger</td><td class="nowrap">@Strf(r.started_at, "%d %b %H:%M")</td>
+      <td><span class="badge @(r.status == "ok" ? "green" : (r.status == "error" ? "red" : ""))">@r.status</span></td>
+      <td>@r.created</td><td>@r.updated</td><td class="small">@Truncate(r.error.Or(""), 160)</td></tr>
+    }
+  }
+  else {<tr><td colspan="7" class="muted">No runs yet.</td></tr>}
+</table></div>

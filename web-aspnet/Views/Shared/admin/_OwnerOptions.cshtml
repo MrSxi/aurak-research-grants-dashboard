@@ -1,0 +1,5 @@
+@inherits AurakView<Args>
+@{ string ownerSel = (string)Model.A; }
+<option value="">Select a person…</option>
+<optgroup label="Faculty">@foreach (var f in M.faculty) {<option value="faculty:@f.id" @Sel(ownerSel == "faculty:" + f.id)>@f.full_name</option>}</optgroup>
+<optgroup label="Students">@foreach (var s in M.students) {<option value="student:@s.id" @Sel(ownerSel == "student:" + s.id)>@(s.full_name)@if (s.email) {<text> (@s.email)</text>}</option>}</optgroup>

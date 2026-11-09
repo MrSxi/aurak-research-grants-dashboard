@@ -1,0 +1,81 @@
+{% macro status_badge(g) -%}
+  {% if g.status == 'unknown' %}<span class="badge unknown">Status not published</span>
+  {% else %}<span class="badge {{ g.status }}">{{ g.status|capitalize }}</span>{% endif %}
+{%- endmacro %}
+
+{% macro deadline(g) -%}
+  {% if g.deadline %}
+    {{ g.deadline|d }}
+    {% set left = g.deadline|days_left %}
+    {% if left is not none and left >= 0 and left <= 30 %}<span class="badge red">{{ left }} day{{ '' if left == 1 else 's' }} left</span>{% endif %}
+  {% else %}<span class="missing">Not published</span>{% endif %}
+{%- endmacro %}
+
+{% macro amount(g) -%}
+  {% if g.amount_text %}{{ g.amount_text }}{% elif g.amount_max %}{{ g.currency }} {{ '{:,.0f}'.format(g.amount_max) }}{% else %}<span class="missing">Not published</span>{% endif %}
+{%- endmacro %}
+
+{% macro grant_card(g, source_names={}, top=None) -%}
+<a class="grant-card" href="/grants/{{ g.id }}">
+  <div>
+    {{ status_badge(g) }}
+    <span class="badge {{ 'gold' if g.scope == 'UAE' else 'dark' }}">{{ 'UAE' if g.scope == 'UAE' else 'International' }}{% if g.emirate %} · {{ g.emirate }}{% endif %}</span>
+    <span class="badge">{{ g.type|capitalize }}</span>
+    {% if g.eligibility_warnings %}<span class="badge red" title="{{ g.eligibility_warnings|join(' ') }}"><i class="fas fa-exclamation-triangle"></i> Eligibility check</span>{% endif %}
+    {% if g.hidden %}<span class="badge dark">Hidden</span>{% endif %}
+  </div>
+  <h3>{{ g.title }}</h3>
+  <div class="facts">
+    <span><i class="fas fa-landmark"></i> {{ g.funder or 'Funder not published' }}</span>
+    <span><i class="far fa-calendar-alt"></i> Deadline: {{ deadline(g) }}</span>
+    <span><i class="fas fa-coins"></i> {{ amount(g) }}</span>
+    {% if top %}<span><i class="fas fa-user-graduate"></i> Top AURAK match: {{ top.evidence and '' }}<b>{{ top.person_name or '' }}</b> match score {{ top.score|score }}</span>{% endif %}
+  </div>
+  <div class="small muted" style="margin-top:6px">Source: {{ source_names.get(g.source, g.source) }} · last updated {{ g.last_checked.strftime('%d %b %Y %H:%M') }} UTC</div>
+</a>
+{%- endmacro %}
+
+{% macro match_card(m, person, kind) -%}
+<div class="match">
+  <div class="top">
+    <div class="scorebox {{ '' if m.score >= config.MATCH_STRONG else 'possible' }}"><div><strong>{{ m.score|score }}</strong><small>match score</small></div></div>
+    <div class="who">
+      {% if person %}
+        <a href="/{{ 'faculty' if kind == 'faculty' else 'students' }}/{{ person.id }}">{{ person.full_name }}</a>
+        <div class="muted">{% if kind == 'faculty' %}{{ person.title or '' }}{% if person.school %} · {{ person.school }}{% endif %}{% else %}Student{% if person.major %} · {{ person.major }}{% endif %}{% if person.school %} · {{ person.school }}{% endif %}{% endif %}</div>
+      {% else %}<b>{{ m.person_id }}</b>{% endif %}
+      <span class="badge {{ 'green' if m.score >= config.MATCH_STRONG else '' }}">{{ m.score|match_label }}</span>
+      {% if m.evidence.same_funder %}<span class="badge gold"><i class="fas fa-award"></i> Previously funded by this funder</span>{% endif %}
+    </div>
+  </div>
+  <details {{ 'open' if m.rank <= 2 }}>
+    <summary>Why this match? (evidence)</summary>
+    <ul class="evidence">
+      {% for key, label in COMPONENTS.items() %}
+        {% set ev = m.evidence.get(key) %}
+        {% if ev %}
+          <li><span class="comp">{{ label }}</span>
+            {% if ev.score is not none %}<span class="sim">component score {{ ev.score|score }}</span>{% endif %}
+            {% if ev['items'] %}
+              <ul style="margin:4px 0 0 18px;padding:0">
+                {% for it in ev['items'] %}<li style="border:0;padding:1px 0">{% if it.url %}<a href="{{ it.url }}" target="_blank" rel="noopener">{{ it.label }}</a>{% else %}{{ it.label }}{% endif %} {% if it.exact %}<span class="badge gold small">exact phrase in grant text</span>{% else %}<span class="sim">(similarity {{ it.similarity|score }})</span>{% endif %}</li>{% endfor %}
+              </ul>
+            {% else %}<span class="sim"> — no item above the evidence threshold</span>{% endif %}
+          </li>
+        {% endif %}
+      {% endfor %}
+      {% if m.evidence.same_funder %}<li><span class="comp">Same funder before</span>{{ m.evidence.same_funder|join('; ') }}</li>{% endif %}
+    </ul>
+  </details>
+</div>
+{%- endmacro %}
+
+{% macro section_head(title, link=None, link_text='View All') -%}
+<div class="section-head"><h2>{{ title }}</h2><div class="rule"></div>{% if link %}<a class="view-all" href="{{ link }}">{{ link_text }} <i class="fas fa-chevron-right small"></i></a>{% endif %}</div>
+{%- endmacro %}
+
+{# Faculty photo from the AURAK website, with initials if the photo is missing or fails to load #}
+{% macro avatar(f, size='') -%}
+{%- set initials = f.full_name.replace('Dr. ', '').replace('Prof. ', '').replace('Mr. ', '').replace('Ms. ', '').replace('Engr. ', '').split()|map('first')|list -%}
+<span class="avatar {{ size }}">{% if f.image_url and image_allowed(f.image_url) %}<img src="{{ f.image_url }}" alt="{{ f.full_name }}" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">{% endif %}<span class="initials">{{ (initials[:1] + initials[-1:])|join }}</span></span>
+{%- endmacro %}

@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}My profile · AURAK Research Grants{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="auth-wrap" style="max-width:720px">
+    <div class="section-head"><h2>My Profile</h2><div class="rule"></div></div>
+    <div class="card">
+      <dl class="facts">
+        <dt>Name</dt><dd><b>{{ st.full_name }}</b></dd>
+        <dt>Student ID</dt><dd>{{ st.student_number|missing('Not provided') }}</dd>
+        <dt>Email</dt><dd>{{ st.email|missing }}</dd>
+        {% if st.major or st.school %}<dt>Programme</dt><dd>{{ st.major or '' }}{% if st.major and st.school %} · {% endif %}{{ st.school or '' }}</dd>{% endif %}
+        <dt>Dashboard access</dt><dd>
+          {% if st.access_status == 'requested' %}<span class="badge pending">requested</span>
+          {% elif st.access_status == 'denied' %}<span class="badge denied">denied</span>
+          {% else %}<span class="badge">not requested</span>{% endif %}
+        </dd>
+      </dl>
+    </div>
+
+    <div class="card">
+      <h3>Full dashboard access</h3>
+      <p>The grants dashboard, researchers, clusters and the assistant are open to approved students (Research Assistants). An administrator reviews each request.</p>
+      {% if st.access_status == 'requested' %}
+        <div class="note"><i class="far fa-clock"></i> Your request was sent{% if last %} on {{ last.created_at.strftime('%d %B %Y') }}{% endif %}. You will get full access as soon as an administrator approves it.</div>
+      {% else %}
+        {% if st.access_status == 'denied' %}
+          <div class="warn"><i class="fas fa-exclamation-triangle"></i>Your last request was denied{% if last and last.reason %}: {{ last.reason }}{% endif %}. You can request again.</div>
+        {% endif %}
+        <form method="post" action="/me/request-access">
+          <button class="btn lg" type="submit"><i class="fas fa-user-check"></i> Request full access (Research Assistant)</button>
+        </form>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

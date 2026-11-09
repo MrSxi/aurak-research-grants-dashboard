@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container" style="padding:60px 24px">
+  <div class="section-head"><h2>{{ 'Page not found' if code == 404 else ('Not available for your role' if code == 403 else 'Something went wrong') }}</h2><div class="rule"></div></div>
+  <p>{{ message }}</p>
+  <a class="btn" href="/">Back to the dashboard</a>
+</div>
+{% endblock %}
