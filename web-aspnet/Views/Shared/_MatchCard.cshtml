@@ -23,7 +23,7 @@
         if (ev)
         {
           <li><span class="comp">@label</span>
-            @if (!ev.score.IsNone) {<span class="sim">component score @Score(ev.score)</span>}
+            @if (!ev.score.IsNone) {<span class="sim">component score @Score(ev.score)</span>}@(" ")
             @if (ev["items"])
             {
               <ul style="margin:4px 0 0 18px;padding:0">

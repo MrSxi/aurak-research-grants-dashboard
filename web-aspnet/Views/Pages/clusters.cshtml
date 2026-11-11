@@ -4,6 +4,7 @@
     <h1>AURAK Research Clusters</h1>
     <div class="lead">Proposed by this project · membership is AI-suggested</div>
     <p>AURAK has no official research clusters, so this dashboard proposes ten, drawn from the departments and research interests of faculty across all three schools. Each person joins the cluster(s) closest to their interests, publications and past grants. Membership is recomputed whenever the data changes, so nothing is assigned by hand. Use a cluster to form a team for a grant.</p>
+    @await Html.PartialAsync("_ExportBar", new Args("/export/clusters", "", "Export all clusters with members and fit"))
   </div>
 </section>
 <section class="section tight">

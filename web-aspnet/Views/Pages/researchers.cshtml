@@ -27,7 +27,7 @@
           @if (ptype == "faculty" && p.Truthy) { @await Html.PartialAsync("_Avatar", new Args(p, "sm")) }
           <div class="scorebox @(score.Num >= Config["MATCH_STRONG"].Num ? "" : "possible")"><div><strong>@Score(score)</strong><small>match score</small></div></div>
           <div class="who"><a href="/@(ptype == "faculty" ? "faculty" : "students")/@pid">@(p.Truthy ? p["full_name"] : pid)</a>
-            <div class="muted">@(ptype == "faculty" ? "Faculty" : "Student")@if (p.Truthy && p["school"].Truthy) {<text> · @p["school"]</text>}@if (ptype == "faculty" && p.Truthy && p["department"].Truthy) {<text> · @p["department"]</text>}</div>
+            <div class="muted">@(ptype == "faculty" ? "Faculty" : (p.Truthy && p["source"] == "signup" && p["access_status"] == "approved" ? "Research Assistant" : "Student"))@if (p.Truthy && p["school"].Truthy) {<text> · @p["school"]</text>}@if (ptype == "faculty" && p.Truthy && p["department"].Truthy) {<text> · @p["department"]</text>}</div>
             @if (ptype == "faculty" && interests.Get(pid)) {<div class="small">@Truncate(Join(interests[pid].Slice(0, 5), " · "), 200)</div>}
           </div>
         </div>
@@ -38,7 +38,9 @@
   {
     <form method="get" class="btn-row" style="margin-bottom:18px">
       <select name="school" onchange="this.form.submit()" style="max-width:360px"><option value="">All schools</option>@foreach (var s in M.schools) {<option @Sel(s == M.school)>@s</option>}</select>
+      <a href="#assistants">Student Research Assistants (@(((J)M.assistants).ToList().Count))</a>
     </form>
+    @await Html.PartialAsync("_ExportBar", new Args("/export/researchers", (string)M.export_qs, "Export faculty and research assistants"))
     <div class="grid-3">
       @foreach (var f in M.rows)
       {
@@ -52,5 +54,27 @@
         </a>
       }
     </div>
+    <div class="section-head" id="assistants" style="margin:34px 0 14px"><h2 style="font-size:1.8rem">Student Research Assistants</h2><div class="rule"></div></div>
+    <p class="muted">Students approved as research assistants. Profiles show approved research interests and publications only. Email and student ID stay private.</p>
+    if (M.assistants)
+    {
+    <div class="grid-3">
+      @foreach (var s in M.assistants)
+      {
+        <a class="card person-card" href="/students/@s.id">
+          @await Html.PartialAsync("_Avatar", new Args(s))
+          <div>
+            <h4 style="margin-bottom:4px">@s.full_name</h4>
+            <div class="small muted">@("Research Assistant")@if (s.major) {<text> · @s.major</text>}</div>
+            <div class="small" style="margin-top:6px">@J.Of(Truncate(Join(((J)M.ra_interests).Get(s.id.ToString()).Or(J.Of(new List<J>())).Slice(0, 4), " · "), 150)).Or("No research interests added yet.")</div>
+          </div>
+        </a>
+      }
+    </div>
+    }
+    else
+    {
+    <div class="note">No approved research assistants@(M.school ? " in this school" : "") yet. Students appear here once an admin approves their access request.</div>
+    }
   }
 </div>

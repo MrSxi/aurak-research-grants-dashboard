@@ -5,6 +5,7 @@
   <div><span class="badge gold">Proposed cluster (not an official AURAK unit)</span> <span class="badge">AI-suggested membership</span></div>
   <p style="max-width:1000px;margin-top:12px">@c.scope</p>
   <div class="chips">@foreach (var t in c.terms) {<span class="chip">@t</span>}</div>
+  <div style="margin-top:14px">@await Html.PartialAsync("_ExportBar", new Args("/export/clusters/" + c.key, "", "Download cluster report"))</div>
 </div>
 <div class="container layout-main" style="margin-top:20px">
   <div>

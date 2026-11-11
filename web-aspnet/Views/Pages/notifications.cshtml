@@ -2,6 +2,7 @@
 <div class="container page-head">
   <div class="section-head"><h2>Grant Notifications</h2><div class="rule"></div>
     @if (M.rows) {<form method="post" action="/notifications/read"><button class="btn sm ghost" type="submit">Mark all as read</button></form>}</div>
+@if (M.rows) {@await Html.PartialAsync("_ExportBar", new Args("/export/notifications", "", "Export notifications"))}
   <p class="muted">After each refresh (every @Int(M.refresh_hours) hours) the dashboard notifies you about new grants whose scope strongly matches your research (match score @(minScore)+ and among the top @Config["NOTIFY_TOP_N"] matches). In-app only for now; email comes later.</p>
 </div>
 <div class="container">

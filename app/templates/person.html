@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "_macros.html" import section_head, status_badge, deadline, avatar %}
+{% from "_macros.html" import section_head, status_badge, deadline, avatar, export_bar %}
 {% block title %}{{ person.full_name }} · AURAK Research Grants{% endblock %}
 {% block content %}
 <div class="container page-head">
@@ -15,9 +15,10 @@
   </div>
   {% else %}
     <h1>{{ person.full_name }}</h1>
-    <div class="muted">Student{% if person.major %} · {{ person.major }}{% endif %}{% if person.school %} · {{ person.school }}{% endif %}</div>
+    <div class="muted">{{ 'Research Assistant' if is_ra else 'Student' }}{% if person.major %} · {{ person.major }}{% endif %}{% if person.school %} · {{ person.school }}{% endif %}</div>
   {% endif %}
   {% if own %}<p class="small muted">This is how your profile appears to others. It is built from the AURAK faculty dataset and OpenAlex; new OpenAlex publications are added automatically every refresh.</p>{% endif %}
+  {% if not limited %}<div style="margin-top:14px">{{ export_bar('/export/' ~ ('faculty' if kind == 'faculty' else 'students') ~ '/' ~ person.id, '', 'Download profile report') }}</div>{% endif %}
 </div>
 
 <div class="container layout-main" style="margin-top:20px">

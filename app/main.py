@@ -18,7 +18,7 @@ from app.auth import AccessPending, LoginRequired, current_user
 from app.db import SessionLocal, init_db
 from app.services import refresh
 from app.services.matching import engine
-from app.web import admin, browse, chat, me, public
+from app.web import admin, browse, chat, exports, me, public
 from app.web.common import render
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
@@ -64,7 +64,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="AURAK Research Grants Dashboard", lifespan=lifespan)
 app.add_middleware(SessionMiddleware, secret_key=config.SECRET_KEY, max_age=60 * 60 * 24 * 7)
 app.mount("/static", StaticFiles(directory=str(config.ROOT / "app" / "static")), name="static")
-for r in (public.router, browse.router, me.router, admin.router, chat.router):
+for r in (public.router, exports.router, browse.router, me.router, admin.router, chat.router):
     app.include_router(r)
 
 

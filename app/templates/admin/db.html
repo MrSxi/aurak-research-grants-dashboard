@@ -1,10 +1,12 @@
 {% extends "base.html" %}
+{% from "_macros.html" import export_bar %}
 {% block title %}Database · Admin{% endblock %}
 {% block content %}
 <div class="container page-head">
   <div class="section-head"><h2>Database (read-only)</h2><div class="rule"></div></div>
   <div class="tabs">{% for k in tables %}<a href="?table={{ k }}" class="{{ 'on' if k == table }}">{{ k }} <span class="small muted">{{ counts[k] }}</span></a>{% endfor %}</div>
   <form class="btn-row" method="get"><input type="hidden" name="table" value="{{ table }}"><input type="text" name="q" value="{{ q }}" placeholder="Search text columns" style="max-width:360px"><button class="btn ghost" type="submit">Search</button><span class="muted">{{ total }} rows</span></form>
+  <div style="margin-top:14px">{{ export_bar('/export/admin/db', 'table=' ~ table|urlencode ~ ('&q=' ~ q|urlencode if q else ''), 'Export this table' ~ (' (search results)' if q else '')) }}</div>
 </div>
 <div class="container">
   <div class="table-wrap" style="margin-top:12px"><table class="data">

@@ -62,6 +62,7 @@
   </div>
 
   <div>
+    <div class="card export-card"><h3><i class="fas fa-file-alt"></i> Funding report</h3><p class="small muted" style="margin:0">A detailed report on this funding: key facts, eligibility, research clusters, and matched faculty and students with the evidence behind each match.</p>@await Html.PartialAsync("_ExportBar", new Args("/export/grants/" + M.grant.id, "", "Download"))</div>
     @if (M.gclusters)
     {
     <div class="card" style="border-top:4px solid var(--secondary)">

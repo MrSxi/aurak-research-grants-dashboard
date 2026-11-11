@@ -3,6 +3,7 @@
   <div class="section-head"><h2>Database (read-only)</h2><div class="rule"></div></div>
   <div class="tabs">@foreach (var k in M.tables) {<a href="?table=@k" class="@(k == M.table ? "on" : "")">@k <span class="small muted">@M.counts[k]</span></a>}</div>
   <form class="btn-row" method="get"><input type="hidden" name="table" value="@M.table"><input type="text" name="q" value="@q" placeholder="Search text columns" style="max-width:360px"><button class="btn ghost" type="submit">Search</button><span class="muted">@M.total rows</span></form>
+  <div style="margin-top:14px">@await Html.PartialAsync("_ExportBar", new Args("/export/admin/db", "table=" + UrlEncode(M.table.ToString()) + (q ? "&q=" + UrlEncode(q.ToString()) : ""), "" + "Export this table" + (q ? " (search results)" : "") + ""))</div>
 </div>
 <div class="container">
   <div class="table-wrap" style="margin-top:12px"><table class="data">

@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "_macros.html" import grant_card %}
+{% from "_macros.html" import grant_card, export_bar %}
 {% block title %}{{ c.name }} · AURAK Research Clusters{% endblock %}
 {% block content %}
 <div class="container page-head">
@@ -8,6 +8,7 @@
   <div><span class="badge gold">Proposed cluster (not an official AURAK unit)</span> <span class="badge">AI-suggested membership</span></div>
   <p style="max-width:1000px;margin-top:12px">{{ c.scope }}</p>
   <div class="chips">{% for t in c.terms %}<span class="chip">{{ t }}</span>{% endfor %}</div>
+  <div style="margin-top:14px">{{ export_bar('/export/clusters/' ~ c.key, '', 'Download cluster report') }}</div>
 </div>
 <div class="container layout-main" style="margin-top:20px">
   <div>

@@ -1,4 +1,5 @@
 from collections import Counter
+from urllib.parse import quote
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import JSONResponse
@@ -71,9 +72,22 @@ def researchers(request: Request, q: str = "", school: str = "", db: Session = D
             ranked.append((ptype, pid, score))
     students = {str(s.id): s for s in db.scalars(select(Student))}
     schools = sorted({f.school for f in rows if f.school})
+    # approved student research assistants get a public profile too (no email or student ID shown)
+    aq = select(Student).where(Student.source == "signup", Student.access_status == "approved",
+                               Student.visible == true()).order_by(Student.full_name, Student.id)
+    if school:
+        aq = aq.where(Student.school == school)
+    assistants = list(db.scalars(aq))
+    ra_interests = {}
+    if assistants:
+        for i in db.scalars(select(Interest).where(Interest.owner_type == "student", Interest.status == "approved",
+                                                   Interest.owner_id.in_([str(s.id) for s in assistants]))
+                              .order_by(Interest.owner_id, Interest.text_norm)):
+            ra_interests.setdefault(i.owner_id, []).append(i.text)
     return render(request, db, user, "researchers.html", active="/researchers", rows=rows, interests=interests, q=q,
                   ranked=ranked, faculty={f.id: f for f in db.scalars(select(Faculty))}, students=students,
-                  school=school, schools=schools)
+                  school=school, schools=schools, assistants=assistants, ra_interests=ra_interests,
+                  export_qs=f"school={quote(school)}" if school else "")
 
 
 @router.get("/faculty/{fid}")
@@ -123,7 +137,8 @@ def student_profile(sid: int, request: Request, db: Session = Depends(get_db)):
     return render(request, db, user, "person.html", active="/researchers", kind="student", person=s,
                   interests=interests, pubs=pubs, awards=[], projects=[],
                   matched=reverse_matches(db, "student", str(sid)),
-                  pclusters=cluster_service.for_person(db, "student", str(sid)))
+                  pclusters=cluster_service.for_person(db, "student", str(sid)),
+                  is_ra=s.source == "signup" and s.access_status == "approved")
 
 
 @router.get("/clusters")

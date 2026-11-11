@@ -78,7 +78,7 @@ Change these before the dashboard is shared beyond a local machine.
 
 ## Roles
 
-- **Student:** signs up with name, AURAK email, student ID and research interests. Until an administrator approves dashboard access, a student only sees their profile and a "Request full access" button. Approved students browse grants, researchers and clusters, submit publications by DOI or OpenAlex ID for approval, and use the assistant.
+- **Student:** signs up with name, AURAK email, student ID and research interests. Until an administrator approves dashboard access, a student only sees their profile and a "Request full access" button. Approved students (research assistants) get a public profile in the Researchers tab, browse grants, researchers and clusters, submit publications by DOI or OpenAlex ID for approval, and use the assistant.
 - **Faculty:** profile built from the dataset and OpenAlex (interests, topics, publications, past grants, Scholar, Scopus and ORCID links). Faculty add or remove their own research interests without approval and get notifications when a new grant matches their research.
 - **Admin:** approves or denies access requests, interests and publications (one at a time or in bulk). Approved items go straight into the database and the matching. Admins can add publications, remove faculty interests, edit or hide grants, check the health of every grant source and browse the database read-only.
 
@@ -105,6 +105,10 @@ The refresh runs every 6 hours (`REFRESH_HOURS`) and can be started from the adm
 
 AURAK has no official research clusters, so the project proposes ten (`app/clusters.py`), drawn from the departments and interests in the dataset. Membership is computed from each person's evidence and labelled as AI-suggested throughout the interface.
 
+## Reports (PDF, Excel, CSV)
+
+Every main page has PDF, Excel and CSV downloads (`app/web/exports.py`, built by `app/services/exports.py`). The grants list exports the current filters with each grant's top matched faculty and students and its research clusters. Each grant page has a detailed funding report: key facts, eligibility, required documents, research clusters, and matched people with the evidence behind every match. Researchers, profiles, clusters, notifications and the admin source health and database pages export too. PDF tables stop at 300 rows. Excel and CSV always carry every row.
+
 ## Data rules
 
 Nothing is invented: missing values show as "Not published", and every figure on screen comes from the database. Scores are match scores, not probabilities, and a match does not mean a person is available to collaborate.
@@ -117,7 +121,7 @@ app/                    Python backend
   config.py             settings (read from .env)
   models.py             database schema
   connectors/           grant sources (grants_gov, eu_ft, uae)
-  services/             matching, refresh, research assistant (chat, llm), clusters
+  services/             matching, refresh, research assistant (chat, llm), clusters, exports
   web/                  routes and page view-models
   templates/, static/   reference templates and the AURAK stylesheet
 web-aspnet/             ASP.NET Core frontend

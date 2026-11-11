@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_macros.html" import export_bar %}
 {% block title %}Source health · Admin{% endblock %}
 {% block content %}
 <div class="container page-head">
@@ -8,6 +9,7 @@
     <span class="muted">Automatic refresh every {{ refresh_hours|int }} hours{% if next_run %} · next run {{ next_run.strftime('%d %b %Y %H:%M %Z') }}{% endif %}. A failing source keeps its last good data.</span>
   </div>
   {% if state.running %}<div class="warn"><i class="fas fa-spinner fa-spin"></i>Refresh running: {{ state.step }}. Reload to update.</div>{% endif %}
+  <div style="margin-top:14px">{{ export_bar('/export/admin/sources', '', 'Export source health and ingestion runs') }}</div>
 </div>
 <div class="container">
   <div class="table-wrap"><table class="data">

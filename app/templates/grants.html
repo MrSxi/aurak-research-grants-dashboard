@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "_macros.html" import grant_card %}
+{% from "_macros.html" import grant_card, export_bar %}
 {% block title %}Grants · AURAK Research Grants Dashboard{% endblock %}
 {% block hero %}
 <div class="searchband" id="search">
@@ -57,6 +57,7 @@
   </form>
   <div>
     <p class="muted"><b>{{ total }}</b> result{{ '' if total == 1 else 's' }}{% if args.q %} for “{{ args.q }}”{% endif %}. Closed calls are hidden unless you choose them under Status.</p>
+    {{ export_bar('/export/grants', request.url.query, 'Export these results with matched people and clusters') }}
     {% for g in rows %}
       {{ grant_card(g, source_names) }}
     {% else %}

@@ -19,9 +19,10 @@
   else
   {
     <h1>@person.full_name</h1>
-    <div class="muted">@("Student")@if (person.major) {<text> · @person.major</text>}@if (person.school) {<text> · @person.school</text>}</div>
+    <div class="muted">@(M.is_ra ? "Research Assistant" : "Student")@if (person.major) {<text> · @person.major</text>}@if (person.school) {<text> · @person.school</text>}</div>
   }
   @if (own) {<p class="small muted">This is how your profile appears to others. It is built from the AURAK faculty dataset and OpenAlex; new OpenAlex publications are added automatically every refresh.</p>}
+  @if (!M.limited) {<div style="margin-top:14px">@await Html.PartialAsync("_ExportBar", new Args("/export/" + (faculty ? "faculty" : "students") + "/" + person.id, "", "Download profile report"))</div>}
 </div>
 
 <div class="container layout-main" style="margin-top:20px">

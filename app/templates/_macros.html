@@ -79,3 +79,8 @@
 {%- set initials = f.full_name.replace('Dr. ', '').replace('Prof. ', '').replace('Mr. ', '').replace('Ms. ', '').replace('Engr. ', '').split()|map('first')|list -%}
 <span class="avatar {{ size }}">{% if f.image_url and image_allowed(f.image_url) %}<img src="{{ f.image_url }}" alt="{{ f.full_name }}" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">{% endif %}<span class="initials">{{ (initials[:1] + initials[-1:])|join }}</span></span>
 {%- endmacro %}
+
+{# Download links for a report: PDF, Excel and CSV. qs keeps the page's current filters. #}
+{% macro export_bar(base, qs='', label='Export') -%}
+<div class="export-bar"><span class="export-label"><i class="fas fa-file-export"></i> {{ label }}</span><a class="btn sm ghost" href="{{ base }}.pdf{{ '?' ~ qs if qs }}" download><i class="fas fa-file-pdf"></i> PDF</a><a class="btn sm ghost" href="{{ base }}.xlsx{{ '?' ~ qs if qs }}" download><i class="fas fa-file-excel"></i> Excel</a><a class="btn sm ghost" href="{{ base }}.csv{{ '?' ~ qs if qs }}" download><i class="fas fa-file-csv"></i> CSV</a></div>
+{%- endmacro %}

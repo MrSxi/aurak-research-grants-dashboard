@@ -57,6 +57,7 @@
   </form>
   <div>
     <p class="muted"><b>@total</b> @("result" + (total == 1 ? "" : "s"))@if (args.q) {<text> for “@args.q”</text>}. Closed calls are hidden unless you choose them under Status.</p>
+    @await Html.PartialAsync("_ExportBar", new Args("/export/grants", Context.Request.QueryString.Value?.TrimStart('?'), "Export these results with matched people and clusters"))
     @if (M.rows)
     {
       foreach (var g in M.rows) {<text> </text>@await Html.PartialAsync("_GrantCard", new Args(g, M.source_names))<text> </text>}

@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "_macros.html" import avatar %}
+{% from "_macros.html" import avatar, export_bar %}
 {% block title %}Researchers · AURAK Research Grants{% endblock %}
 {% block hero %}
 <div class="searchband">
@@ -26,7 +26,7 @@
           {% if ptype == 'faculty' and p %}{{ avatar(p, 'sm') }}{% endif %}
           <div class="scorebox {{ '' if score >= config.MATCH_STRONG else 'possible' }}"><div><strong>{{ score|score }}</strong><small>match score</small></div></div>
           <div class="who"><a href="/{{ 'faculty' if ptype == 'faculty' else 'students' }}/{{ pid }}">{{ p.full_name if p else pid }}</a>
-            <div class="muted">{{ 'Faculty' if ptype == 'faculty' else 'Student' }}{% if p and p.school %} · {{ p.school }}{% endif %}{% if ptype == 'faculty' and p and p.department %} · {{ p.department }}{% endif %}</div>
+            <div class="muted">{{ 'Faculty' if ptype == 'faculty' else ('Research Assistant' if p and p.source == 'signup' and p.access_status == 'approved' else 'Student') }}{% if p and p.school %} · {{ p.school }}{% endif %}{% if ptype == 'faculty' and p and p.department %} · {{ p.department }}{% endif %}</div>
             {% if ptype == 'faculty' and interests.get(pid) %}<div class="small">{{ interests[pid][:5]|join(' · ')|truncate(200) }}</div>{% endif %}
           </div>
         </div>
@@ -37,7 +37,9 @@
   {% else %}
     <form method="get" class="btn-row" style="margin-bottom:18px">
       <select name="school" onchange="this.form.submit()" style="max-width:360px"><option value="">All schools</option>{% for s in schools %}<option {{ 'selected' if s == school }}>{{ s }}</option>{% endfor %}</select>
+      <a href="#assistants">Student Research Assistants ({{ assistants|length }})</a>
     </form>
+    {{ export_bar('/export/researchers', export_qs, 'Export faculty and research assistants') }}
     <div class="grid-3">
       {% for f in rows %}
         <a class="card person-card" href="/faculty/{{ f.id }}">
@@ -50,6 +52,24 @@
         </a>
       {% endfor %}
     </div>
+    <div class="section-head" id="assistants" style="margin:34px 0 14px"><h2 style="font-size:1.8rem">Student Research Assistants</h2><div class="rule"></div></div>
+    <p class="muted">Students approved as research assistants. Profiles show approved research interests and publications only. Email and student ID stay private.</p>
+    {% if assistants %}
+    <div class="grid-3">
+      {% for s in assistants %}
+        <a class="card person-card" href="/students/{{ s.id }}">
+          {{ avatar(s) }}
+          <div>
+            <h4 style="margin-bottom:4px">{{ s.full_name }}</h4>
+            <div class="small muted">Research Assistant{% if s.major %} · {{ s.major }}{% endif %}</div>
+            <div class="small" style="margin-top:6px">{{ (ra_interests.get(s.id|string) or [])[:4]|join(' · ')|truncate(150) or 'No research interests added yet.' }}</div>
+          </div>
+        </a>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="note">No approved research assistants{{ ' in this school' if school }} yet. Students appear here once an admin approves their access request.</div>
+    {% endif %}
   {% endif %}
 </div>
 {% endblock %}

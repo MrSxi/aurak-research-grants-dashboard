@@ -6,6 +6,7 @@
     <span class="muted">Automatic refresh every @Int(M.refresh_hours) @("hours")@if (M.next_run) {<text> · next run @Strf(M.next_run, "%d %b %Y %H:%M %Z")</text>}. A failing source keeps its last good data.</span>
   </div>
   @if (state.running) {<div class="warn"><i class="fas fa-spinner fa-spin"></i>Refresh running: @state.step. Reload to update.</div>}
+  <div style="margin-top:14px">@await Html.PartialAsync("_ExportBar", new Args("/export/admin/sources", "", "Export source health and ingestion runs"))</div>
 </div>
 <div class="container">
   <div class="table-wrap"><table class="data">

@@ -1,10 +1,11 @@
 {% extends "base.html" %}
-{% from "_macros.html" import deadline, status_badge %}
+{% from "_macros.html" import deadline, status_badge, export_bar %}
 {% block title %}Notifications · AURAK Research Grants{% endblock %}
 {% block content %}
 <div class="container page-head">
   <div class="section-head"><h2>Grant Notifications</h2><div class="rule"></div>
     {% if rows %}<form method="post" action="/notifications/read"><button class="btn sm ghost" type="submit">Mark all as read</button></form>{% endif %}</div>
+{% if rows %}{{ export_bar('/export/notifications', '', 'Export notifications') }}{% endif %}
   <p class="muted">After each refresh (every {{ refresh_hours|int }} hours) the dashboard notifies you about new grants whose scope strongly matches your research (match score {{ (config.NOTIFY_MIN_SCORE * 100)|round|int }}+ and among the top {{ config.NOTIFY_TOP_N }} matches). In-app only for now; email comes later.</p>
 </div>
 <div class="container">
